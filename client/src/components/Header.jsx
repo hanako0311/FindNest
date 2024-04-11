@@ -83,7 +83,7 @@ export default function Header() {
           {isDarkMode ? <FaSun /> : <FaMoon />}
         </Button>
         <Link to='/sign-in' /*className="hidden md:block"*/>
-          <Button gradientDuoTone='purpleToBlue' outline>
+          <Button gradientDuoTone='redToYellow' outline>
             Sign In
           </Button>
         </Link>
@@ -106,7 +106,7 @@ export default function Header() {
         </Link>
         {/* Mobile view sign-in link */}
         <Link to='/sign-in' className="block md:hidden">
-          <Button gradientDuoTone='purpleToBlue' outline>
+          <Button gradientDuoTone='redToYellow' outline>
             Sign In
           </Button>
         </Link>
