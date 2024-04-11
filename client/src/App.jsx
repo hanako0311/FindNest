@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import ContactUs from "./pages/ContactUs";
 import Header from "./components/Header";
 import Features from "./pages/Features";
+import Footer from "./components/Footer";
 
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
     <Route path="/sign-in" element={<SignIn />} />
     <Route path="/dashboard" element={<Dashboard />} />
   </Routes>
+  <Footer />
   </BrowserRouter>
   )
 }
