@@ -45,5 +45,4 @@ npm run start-server
 
 # Start the React frontend with Vite
 cd client
-cd client
 npm run dev
