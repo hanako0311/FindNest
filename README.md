@@ -38,7 +38,9 @@ npm install
 
 ### Running the Application
 # Start the backend server
-npm run start-server
+should be in root folder
+npm run dev
 
 # Start the React frontend with Vite
+cd client
 npm run dev
