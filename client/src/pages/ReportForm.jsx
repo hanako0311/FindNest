@@ -1,76 +1,90 @@
 import React, { useState } from 'react';
+import { Alert, Button, FileInput, TextInput } from 'flowbite-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';  // This imports the default stylesheet for the editor
+import { CircularProgressbar } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
 
-const ReportForm = () => {
-    const [selectedImage, setSelectedImage] = useState(null);
+export default function CreateLostFoundPost() {
+  const [file, setFile] = useState(null);
+  const [imageUploadProgress, setImageUploadProgress] = useState(null);
+  const [imageUploadError, setImageUploadError] = useState(null);
+  const [formData, setFormData] = useState({
+    item: '',
+    dateFound: '',
+    location: '',
+    description: '',
+    image: ''
+  });
 
-    const handleImageChange = (event) => {
-        setSelectedImage(event.target.files[0]);
-    };
+  const handleUploadImage = async (e) => {
+    // Here you would handle the image upload logic
+    // Since you mentioned this is a MERN app, you will eventually handle the upload to your server
+  };
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        // Handle form submission including the selected image
-        console.log(selectedImage);
-    };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-    return (
-        <div className="flex flex-col items-center justify-center h-screen">
-            <h1 className="text-2xl font-bold mb-4">Report Form</h1>
-            <form className="w-1/2" onSubmit={handleSubmit}>
-                <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-                        Name
-                    </label>
-                    <input
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        id="name"
-                        type="text"
-                        placeholder="Enter your name"
-                    />
-                </div>
-                <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-                        Email
-                    </label>
-                    <input
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                    />
-                </div>
-                <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="message">
-                        Message
-                    </label>
-                    <textarea
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        id="message"
-                        rows="4"
-                        placeholder="Enter your message"
-                    ></textarea>
-                </div>
-                <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="image">
-                        Image
-                    </label>
-                    <input
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        id="image"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                    />
-                </div>
-                <button
-                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    type="submit"
-                >
-                    Submit
-                </button>
-            </form>
+  return (
+    <div className='p-3 max-w-3xl mx-auto min-h-screen'>
+      <h1 className='text-center text-3xl my-7 font-semibold'>Report Found Item</h1>
+      <form className='flex flex-col gap-4'>
+        <TextInput
+          type='text'
+          placeholder='Item Found'
+          required
+          name='item'
+          onChange={handleChange}
+        />
+        <TextInput
+          type='date'
+          placeholder='Date Found'
+          required
+          name='dateFound'
+          onChange={handleChange}
+        />
+        <TextInput
+          type='text'
+          placeholder='Location Found'
+          required
+          name='location'
+          onChange={handleChange}
+        />
+        <ReactQuill
+          theme='snow'
+          placeholder='Describe the item...'
+          required
+          onChange={(value) => {
+            setFormData(prev => ({ ...prev, description: value }));
+          }}
+        />
+        <div className='flex gap-4 items-center'>
+          <FileInput
+            type='file'
+            accept='image/*'
+            onChange={(e) => setFile(e.target.files[0])}
+          />
+          <Button
+            onClick={handleUploadImage}
+            disabled={!!imageUploadProgress}
+            color="failure">
+            Upload Image
+          </Button>
         </div>
-    );
-};
-
-export default ReportForm;
+        {imageUploadError && <Alert color='failure'>{imageUploadError}</Alert>}
+        {formData.image && (
+          <img
+            src={formData.image}
+            alt='Uploaded'
+            className='w-full h-72 object-cover'
+          />
+        )}
+        <Button type='button' gradientDuoTone='pinkToOrange'>
+          Submit Found Item
+        </Button>
+      </form>
+    </div>
+  );
+}
