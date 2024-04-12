@@ -7,6 +7,7 @@ import ContactUs from "./pages/ContactUs";
 import Header from "./components/Header";
 import Features from "./pages/Features";
 import Footer from "./components/Footer";
+import ReportForm from "./pages/ReportForm";
 
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
     <Route path="/contact-us" element={<ContactUs />} />
     <Route path="/sign-in" element={<SignIn />} />
     <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/reportform" element={<ReportForm />} />
   </Routes>
   <Footer />
   </BrowserRouter>
