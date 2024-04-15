@@ -1,7 +1,10 @@
 import { Footer } from 'flowbite-react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { BsFacebook, BsInstagram, BsTwitter, BsGithub, BsDribbble } from 'react-icons/bs';
 export default function FooterCom() {
+  const { theme } = useSelector((state) => state.theme);
+  
   return (
     <Footer container className='border border-t-8 border-red-500'>
       <div className='w-full max-w-7xl mx-auto'>
@@ -9,7 +12,7 @@ export default function FooterCom() {
           <div className='mt-5'>
           <Link to="/" className="flex items-center">
                 <img
-                src="/FindNestRedLogo-W.svg"
+                src={theme === 'dark' ? "/FindNestYellowLogo-R.svg" : "/FindNestRedLogo-W.svg"}
                 className="mr-2 h-6 sm:h-9"
                 alt="FindNest Logo"
                 />

@@ -7,6 +7,7 @@ import ContactUs from "./pages/ContactUs";
 import Header from "./components/Header";
 import Features from "./pages/Features";
 import Footer from "./components/Footer";
+import PrivateRoute from "./components/PrivateRoute";
 
 
 export default function App() {
@@ -14,12 +15,14 @@ export default function App() {
   <BrowserRouter>
   <Header /> 
   <Routes>
-    <Route path="/" element={<Home />} />
-    <Route path="/features" element={<Features />} />
-    <Route path="/about-us" element={<AboutUs />} />
-    <Route path="/contact-us" element={<ContactUs />} />
-    <Route path="/sign-in" element={<SignIn />} />
-    <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/" element={<Home />} />
+      <Route path="/features" element={<Features />} />
+      <Route path="/about-us" element={<AboutUs />} />
+      <Route path="/contact-us" element={<ContactUs />} />
+      <Route path="/sign-in" element={<SignIn />} />
+      <Route element={<PrivateRoute/>} >
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Route>
   </Routes>
   <Footer />
   </BrowserRouter>
