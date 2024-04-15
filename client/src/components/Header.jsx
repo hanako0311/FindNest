@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, Button, Dropdown, Navbar, TextInput } from 'flowbite-react';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import { AiOutlineSearch } from 'react-icons/ai';
+import { useSelector } from 'react-redux';
 
 export default function Header() {
   const navigate = useNavigate();
