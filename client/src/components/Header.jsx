@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Avatar, Button, Dropdown, Navbar, TextInput } from 'flowbite-react';
+import { Avatar, Button, Dropdown, DropdownDivider, DropdownHeader, DropdownItem, Navbar, TextInput } from 'flowbite-react';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import { AiOutlineSearch } from 'react-icons/ai';
 import { useSelector } from 'react-redux';
 
 export default function Header() {
   const navigate = useNavigate();
+  const { currentUser } = useSelector((state) => state.user);
   const [isDarkMode, setIsDarkMode] = useState(false); 
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -83,11 +84,39 @@ export default function Header() {
         >
           {isDarkMode ? <FaSun /> : <FaMoon />}
         </Button>
-        <Link to='/sign-in' /*className="hidden md:block"*/>
+        { currentUser ? (
+          <Dropdown
+            arrowIcon = {false}
+            inline
+            label={
+              <Avatar
+                alt='user avatar'
+                img={currentUser.profilePicture}
+                rounded
+              />
+            }
+          >
+            <DropdownHeader>
+            <span className='block text-sm'>@{currentUser.username}</span>
+            <span className='block text-sm font-medium text-gray-500 truncate'>
+            {currentUser.email}</span>
+            </DropdownHeader>
+            <Link to={'/dashboard?tab=profile'}>
+              <Dropdown.Item>Profile</Dropdown.Item>
+            </Link>
+            <DropdownDivider />
+            <DropdownItem> Sign Out </DropdownItem>
+          </Dropdown>
+        ):
+        (
+          <Link to='/sign-in' /*className="hidden md:block"*/>
           <Button gradientDuoTone='redToYellow' outline>
             Sign In
           </Button>
         </Link>
+        )
+      }
+        
         <Navbar.Toggle />
         </div>  
       </div>
