@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { FaSignOutAlt } from "react-icons/fa";
 import { set } from "mongoose";
+import { getStorage } from "firebase/storage";
+import { app } from "../firebase";
 
 export default function DashProfile() {
   const { currentUser } = useSelector((state) => state.user);
@@ -24,7 +26,17 @@ export default function DashProfile() {
   }, [imageFile]);
 
   const uploadImage = async (imageFile) => {
-    console.log("uploading image");
+    /**  service firebase.storage {
+      match /b/{bucket}/o {
+        match /{allPaths=**} {
+          allow read;
+          allow write: if 
+          request.resource.size < 2 * 1024 * 1024 && 
+          request.resource.contentType.matches('image/.*');
+        }
+      }
+    }**/
+    const storage = getStorage(app);
   };
   return (
     <div className="max-w-lg mx-auto p-3 w-full">
