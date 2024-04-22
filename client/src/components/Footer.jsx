@@ -13,7 +13,7 @@ export default function FooterCom() {
 
   return (
     <Footer container className="border border-t-8 border-red-500">
-      <div className="w-full max-w-7xl mx-auto">
+      <div className="mx-auto w-full max-w-screen-xl">
         <div className="grid w-full justify-between sm:flex md:grid-cols-1">
           <div className="mt-5">
             <Link to="/" className="flex items-center">
@@ -36,14 +36,14 @@ export default function FooterCom() {
               <Footer.Title title="About" />
               <Footer.LinkGroup col>
                 <Footer.Link
-                  href="https://www.100jsprojects.com"
+                  href="/about-us"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   Capstone Project
                 </Footer.Link>
                 <Footer.Link
-                  href="/about"
+                  href="https://youtu.be/76KsgvKrqnI"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
