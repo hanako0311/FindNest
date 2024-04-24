@@ -5,6 +5,7 @@ import { FaMoon, FaSun } from "react-icons/fa";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleTheme } from "../redux/theme/themeSlice";
 import { useEffect, useState } from "react";
+import { signoutSuccess } from "../redux/user/userSlice";
 
 export default function Header() {
   const path = useLocation().pathname;
@@ -29,6 +30,23 @@ export default function Header() {
     urlParams.set("searchTerm", searchTerm);
     const searchQuery = urlParams.toString();
     navigate(`/search?${searchQuery}`);
+  };
+
+  const handleSignout = async () => {
+    try {
+      const res = await fetch("/api/user/signout", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to sign out");
+      }
+      dispatch(signoutSuccess());
+    } catch (error) {
+      console.error(error.message);
+      // Update the state to show the error in UI
+      setUpdateUserError("Sign out failed: " + error.message);
+    }
   };
 
   return (
@@ -87,7 +105,7 @@ export default function Header() {
               <Dropdown.Item>Profile</Dropdown.Item>
             </Link>
             <Dropdown.Divider />
-            <Dropdown.Item>Sign out</Dropdown.Item>
+            <Dropdown.Item onClick={handleSignout} >Sign out</Dropdown.Item>
           </Dropdown>
         ) : (
           <Link to="/sign-in">

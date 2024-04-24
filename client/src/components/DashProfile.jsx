@@ -11,11 +11,11 @@ import {
 import { app } from "../firebase";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
-import { set } from "mongoose";
 import {
   updateStart,
   updateSuccess,
   updateFailure,
+  signoutSuccess,
 } from "../redux/user/userSlice";
 import { useDispatch } from "react-redux";
 
@@ -31,6 +31,7 @@ export default function DashProfile() {
   const [formData, setFormData] = useState({});
   const dispatch = useDispatch();
   const filePickerRef = useRef();
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
@@ -133,6 +134,24 @@ export default function DashProfile() {
       setUpdateUserError(error.message);
     }
   };
+
+  const handleSignout = async () => {
+    try {
+      const res = await fetch("/api/user/signout", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to sign out");
+      }
+      dispatch(signoutSuccess());
+    } catch (error) {
+      console.error(error.message);
+      // Update the state to show the error in UI
+      setUpdateUserError("Sign out failed: " + error.message);
+    }
+  };
+
   return (
     <div className="max-w-lg mx-auto p-3 w-full">
       <h1 className="my-7 text-center font-semibold text-3xl">Profile</h1>
@@ -209,6 +228,7 @@ export default function DashProfile() {
       </form>
       <div className="text-red-500 flex justify-end mt-5 ">
         <button
+          onClick={handleSignout}
           style={{
             display: "flex",
             justifyContent: "flex-end",
