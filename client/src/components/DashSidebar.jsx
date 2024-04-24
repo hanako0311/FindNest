@@ -71,6 +71,7 @@ export default function DashSidebar() {
         onClose={() => setShowSignoutModal(false)}
         popup
         size="md"
+        className="flex items-center justify-center min-h-screen"
       >
         <Modal.Header />
         <Modal.Body>
