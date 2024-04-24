@@ -1,7 +1,15 @@
-import { Avatar, Button, Dropdown, Navbar, TextInput } from "flowbite-react";
+import {
+  Avatar,
+  Button,
+  Dropdown,
+  Navbar,
+  TextInput,
+  Modal,
+} from "flowbite-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AiOutlineSearch } from "react-icons/ai";
 import { FaMoon, FaSun } from "react-icons/fa";
+import { HiOutlineExclamationCircle } from "react-icons/hi";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleTheme } from "../redux/theme/themeSlice";
 import { useEffect, useState } from "react";
@@ -15,6 +23,7 @@ export default function Header() {
   const { currentUser } = useSelector((state) => state.user);
   const { theme } = useSelector((state) => state.theme);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showSignoutModal, setShowSignoutModal] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -42,10 +51,12 @@ export default function Header() {
         throw new Error(data.message || "Failed to sign out");
       }
       dispatch(signoutSuccess());
+      setShowSignoutModal(false); // Close the modal after successful sign out
     } catch (error) {
       console.error(error.message);
       // Update the state to show the error in UI
       setUpdateUserError("Sign out failed: " + error.message);
+      setShowSignoutModal(false); // Close the modal on error as well
     }
   };
 
@@ -105,7 +116,9 @@ export default function Header() {
               <Dropdown.Item>Profile</Dropdown.Item>
             </Link>
             <Dropdown.Divider />
-            <Dropdown.Item onClick={handleSignout} >Sign out</Dropdown.Item>
+            <Dropdown.Item onClick={() => setShowSignoutModal(true)}>
+              Sign out
+            </Dropdown.Item>
           </Dropdown>
         ) : (
           <Link to="/sign-in">
@@ -130,6 +143,31 @@ export default function Header() {
           <Link to="/contact-us">Contact Us</Link>
         </Navbar.Link>
       </Navbar.Collapse>
+
+      <Modal
+        show={showSignoutModal}
+        onClose={() => setShowSignoutModal(false)}
+        popup
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
+            <h3 className="mb-5 text-lg font-semibold text-gray-500 dark:text-gray-400">
+              Are you sure you want to sign out?
+            </h3>
+            <div className="flex justify-center gap-4">
+              <Button color="failure" onClick={handleSignout}>
+                Yes, I'm sure
+              </Button>
+              <Button color="gray" onClick={() => setShowSignoutModal(false)}>
+                No, cancel
+              </Button>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
     </Navbar>
   );
 }

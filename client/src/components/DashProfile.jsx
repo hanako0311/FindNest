@@ -1,4 +1,9 @@
-import { Alert, Button, TextInput } from "flowbite-react";
+import {
+  Alert,
+  Button,
+  TextInput,
+  Modal,
+} from "flowbite-react";
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { FaSignOutAlt } from "react-icons/fa";
@@ -18,6 +23,7 @@ import {
   signoutSuccess,
 } from "../redux/user/userSlice";
 import { useDispatch } from "react-redux";
+import { HiOutlineExclamationCircle } from "react-icons/hi";
 
 export default function DashProfile() {
   const { currentUser } = useSelector((state) => state.user);
@@ -28,6 +34,7 @@ export default function DashProfile() {
   const [imageFileUploading, setImageFileUploading] = useState(false);
   const [updateUserSuccess, setUpdateUserSuccess] = useState(null);
   const [updateUserError, setUpdateUserError] = useState(null);
+  const [showSignoutModal, setShowSignoutModal] = useState(false);
   const [formData, setFormData] = useState({});
   const dispatch = useDispatch();
   const filePickerRef = useRef();
@@ -145,10 +152,12 @@ export default function DashProfile() {
         throw new Error(data.message || "Failed to sign out");
       }
       dispatch(signoutSuccess());
+      setShowSignoutModal(false); // Close the modal after successful sign out
     } catch (error) {
       console.error(error.message);
       // Update the state to show the error in UI
       setUpdateUserError("Sign out failed: " + error.message);
+      setShowSignoutModal(false); // Close the modal on error as well
     }
   };
 
@@ -228,7 +237,7 @@ export default function DashProfile() {
       </form>
       <div className="text-red-500 flex justify-end mt-5 ">
         <button
-          onClick={handleSignout}
+          onClick={() => setShowSignoutModal(true)}
           style={{
             display: "flex",
             justifyContent: "flex-end",
@@ -249,6 +258,31 @@ export default function DashProfile() {
           {updateUserError}
         </Alert>
       )}
+
+      <Modal
+        show={showSignoutModal}
+        onClose={() => setShowSignoutModal(false)}
+        popup
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
+            <h3 className="mb-5 text-lg font-semibold text-gray-500 dark:text-gray-400">
+              Are you sure you want to sign out?
+            </h3>
+            <div className="flex justify-center gap-4">
+              <Button color="failure" onClick={handleSignout}>
+                Yes, I'm sure
+              </Button>
+              <Button color="gray" onClick={() => setShowSignoutModal(false)}>
+                No, cancel
+              </Button>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }

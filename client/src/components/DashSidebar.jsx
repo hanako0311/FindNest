@@ -1,5 +1,9 @@
-import { Sidebar } from "flowbite-react";
-import { HiArrowSmRight, HiUser } from "react-icons/hi";
+import { Sidebar, Modal, Button } from "flowbite-react";
+import {
+  HiArrowSmRight,
+  HiUser,
+  HiOutlineExclamationCircle,
+} from "react-icons/hi";
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { signoutSuccess } from "../redux/user/userSlice";
@@ -9,6 +13,8 @@ export default function DashSidebar() {
   const location = useLocation();
   const dispatch = useDispatch();
   const [tab, setTab] = useState("");
+  const [showSignoutModal, setShowSignoutModal] = useState(false);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const tabFromUrl = urlParams.get("tab");
@@ -29,12 +35,12 @@ export default function DashSidebar() {
         throw new Error(data.message || "Failed to sign out");
       }
       dispatch(signoutSuccess());
+      setShowSignoutModal(false); // Close modal on successful sign out
     } catch (error) {
       console.error(error.message);
-      // Update the state to show the error in UI
-      setUpdateUserError("Sign out failed: " + error.message);
     }
   };
+
   return (
     <Sidebar className="w-full md:w-56">
       <Sidebar.Items>
@@ -53,12 +59,37 @@ export default function DashSidebar() {
           <Sidebar.Item
             icon={HiArrowSmRight}
             className="cursor-pointer"
-            onClick={handleSignout}
+            onClick={() => setShowSignoutModal(true)} // Open modal on click
           >
             Sign Out
           </Sidebar.Item>
         </Sidebar.ItemGroup>
       </Sidebar.Items>
+
+      <Modal
+        show={showSignoutModal}
+        onClose={() => setShowSignoutModal(false)}
+        popup
+        size="md"
+      >
+        <Modal.Header />
+        <Modal.Body>
+          <div className="text-center">
+            <HiOutlineExclamationCircle className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto" />
+            <h3 className="mb-5 text-lg font-semibold text-gray-500 dark:text-gray-400">
+              Are you sure you want to sign out?
+            </h3>
+            <div className="flex justify-center gap-4">
+              <Button color="failure" onClick={handleSignout}>
+                Yes, I'm sure
+              </Button>
+              <Button color="gray" onClick={() => setShowSignoutModal(false)}>
+                No, cancel
+              </Button>
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
     </Sidebar>
   );
 }
