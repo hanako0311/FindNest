@@ -11,7 +11,12 @@ export const updateUser = async (req, res, next) => {
   console.log("Request User:", req.user); // Log user information from token
   console.log("Request Body:", req.body); // Log request body content
 
-  if (req.user.id !== req.params.userId) {
+  // Allow admins and superAdmins to update any profile, or a user to update their own profile
+  if (
+    req.user.role !== "admin" &&
+    req.user.role !== "superAdmin" &&
+    req.user.id !== req.params.userId
+  ) {
     return next(errorHandler(403, "You are not allowed to update this user"));
   }
 
@@ -46,6 +51,11 @@ export const updateUser = async (req, res, next) => {
   }
 
   try {
+    // Add role update restriction: only superAdmin can change roles
+    if (req.body.role && req.user.role !== "superAdmin") {
+      return next(errorHandler(403, "Only super admins can change user roles"));
+    }
+
     const updateUser = await User.findByIdAndUpdate(
       req.params.userId,
       {
@@ -67,24 +77,31 @@ export const updateUser = async (req, res, next) => {
   }
 };
 
-
 export const deleteUser = async (req, res, next) => {
-  if (req.user.id !== req.params.userId) {
-    return next(errorHandler(403, "You are not allowed to delete this user"));
+  const user = await User.findById(req.user.id);
+  const targetUser = await User.findById(req.params.userId);
+
+  if (user.role !== "superAdmin") {
+    return next(
+      errorHandler(403, "Unauthorized: Only super admins can delete users.")
+    );
   }
-  try {
+
+  if (targetUser) {
     await User.findByIdAndDelete(req.params.userId);
     res.status(200).json("User has been deleted");
-  } catch (error) {
-    next(error);
+  } else {
+    return next(errorHandler(404, "User not found"));
   }
-}
+};
 
 export const signout = (req, res, next) => {
   try {
-    res.clearCookie("access_token").status(200).json("User has been signed out");
-  }
-  catch (error) {
+    res
+      .clearCookie("access_token")
+      .status(200)
+      .json("User has been signed out");
+  } catch (error) {
     next(error);
   }
-}
+};

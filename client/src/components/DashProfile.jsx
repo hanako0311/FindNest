@@ -1,9 +1,4 @@
-import {
-  Alert,
-  Button,
-  TextInput,
-  Modal,
-} from "flowbite-react";
+import { Alert, Button, TextInput, Modal } from "flowbite-react";
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { FaSignOutAlt } from "react-icons/fa";
@@ -26,7 +21,7 @@ import { useDispatch } from "react-redux";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
 
 export default function DashProfile() {
-  const { currentUser } = useSelector((state) => state.user);
+  const { currentUser, error, loading } = useSelector((state) => state.user);
   const [imageFile, setImageFile] = useState(null);
   const [imageFileURL, setImageFileURL] = useState(null);
   const [imageFileUploadProgress, setImageFileUploadProgress] = useState(null);
@@ -231,8 +226,13 @@ export default function DashProfile() {
           placeholder="password"
           onChange={handleChange}
         />
-        <Button type="submit" gradientDuoTone="redToYellow" outline>
-          Update Profile
+        <Button
+          type="submit"
+          gradientDuoTone="redToYellow"
+          outline
+          disabled={loading || imageFileUploading}
+        >
+          {loading ? 'Loading...' : 'Update'}
         </Button>
       </form>
       <div className="text-red-500 flex justify-end mt-5 ">

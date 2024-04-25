@@ -100,7 +100,7 @@ export const signin = async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: validUser._id, isAdmin: validUser },
+      { id: validUser._id, role: validUser.role },
       process.env.JWT_SECRET
     );
 
@@ -109,7 +109,9 @@ export const signin = async (req, res, next) => {
     res
       .status(200)
       .cookie("access_token", token, {
-        httpOnly: true,
+        httpOnly: true, // Prevents client-side JS from reading the cookie
+        secure: true, // Ensures the cookie is sent over HTTPS only
+        sameSite: "strict", // Strictly prevents sending the cookie along with cross-site requests
       })
       .json(rest);
   } catch (error) {
