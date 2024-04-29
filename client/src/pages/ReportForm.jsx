@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useState } from "react";
-import { Alert, Button, FileInput, TextInput } from "flowbite-react";
+import { Alert, Button, FileInput, TextInput, Select } from "flowbite-react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css"; // This imports the default stylesheet for the editor
 import { CircularProgressbar } from "react-circular-progressbar";
@@ -16,7 +16,42 @@ export default function CreateLostFoundPost() {
     location: "",
     description: "",
     image: "",
+    category: "",
   });
+
+  const categories = [
+    "Mobile Phones",
+    "Laptops/Tablets",
+    "Headphones/Earbuds",
+    "Chargers and Cables",
+    "Cameras",
+    "Electronic Accessories",
+    "Textbooks",
+    "Notebooks",
+    "Stationery Items",
+    "Art Supplies",
+    "Calculators",
+    "Coats and Jackets",
+    "Hats and Caps",
+    "Scarves and Gloves",
+    "Bags and Backpacks",
+    "Sunglasses",
+    "Jewelry and Watches",
+    "Umbrellas",
+    "Wallets and Purses",
+    "ID Cards and Passports",
+    "Keys",
+    "Personal Care Items",
+    "Sports Gear",
+    "Gym Equipment",
+    "Bicycles and Skateboards",
+    "Musical Instruments",
+    "Water Bottles",
+    "Lunch Boxes",
+    "Toys and Games",
+    "Decorative Items",
+    "Other",
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent the default form submit action
@@ -63,13 +98,29 @@ export default function CreateLostFoundPost() {
         Report Found Item
       </h1>
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-        <TextInput
-          type="text"
-          placeholder="Item Found"
-          required
-          name="item"
-          onChange={handleChange}
-        />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <TextInput
+            type="text"
+            placeholder="Item Found"
+            required
+            name="item"
+            onChange={handleChange}
+            className="flex-auto sm:flex-1"
+          />
+          <Select
+            onChange={handleChange}
+            name="category"
+            required
+            className="w-full sm:w-1/4"
+          >
+            <option value="">Select a category</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </Select>
+        </div>
         <TextInput
           type="date"
           placeholder="Date Found"

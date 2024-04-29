@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import userRoutes from "./routes/user.route.js";
 import authRoutes from "./routes/auth.route.js";
+import itemRoutes from "./routes/items.route.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(cookieParser());
 // Routes
 app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/items", itemRoutes);
 
 // Catch-all for unhandled routes
 app.use((req, res, next) => {
