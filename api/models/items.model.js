@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const itemSchema = new mongoose.Schema(
   {
-    userId: {
+    userRef: {
       type: String,
       required: true,
     },
@@ -22,12 +22,10 @@ const itemSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    images: [
-      {
-        type: String,
-        required: true,
-      },
-    ],
+    imageUrls: {
+      type: Array,
+      required: true,
+    },
     category: {
       type: String,
       required: true,
@@ -65,18 +63,12 @@ const itemSchema = new mongoose.Schema(
         "Other",
       ],
     },
-    slug: {
-      type: String,
-      required: true,
-      unique: true,
-    },
   },
   { timestamps: true }
 );
 
 itemSchema.index({ item: "text", description: "text", category: "text" }); // Including category in the text index
 
-// Check if the model exists before creating a new one
 const Item = mongoose.model("Item", itemSchema);
 
 export default Item;
