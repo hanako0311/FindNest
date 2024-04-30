@@ -1,7 +1,12 @@
 import React, { useState } from "react";
-import { FileInput, TextInput, Select, Button, Alert } from "flowbite-react";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css"; // This imports the default stylesheet for the editor
+import {
+  FileInput,
+  TextInput,
+  Select,
+  Button,
+  Alert,
+  Datepicker,
+} from "flowbite-react";
 import {
   getStorage,
   ref,
@@ -14,34 +19,41 @@ import { HiOutlineTrash } from "react-icons/hi";
 export default function CreateLostFoundPost() {
   const [files, setFiles] = useState([]);
   const [formData, setFormData] = useState({
+    item: "",
+    dateFound: new Date(),
+    location: "",
+    description: "",
+    category: "",
     imageUrls: [],
   });
+  const [imageUploadProgress, setImageUploadProgress] = useState(null);
   const [imageUploadError, setImageUploadError] = useState(false);
-  console.log(formData);
+  const [reportSubmitError, setReportSubmitError] = useState(null);
+  const [reportSuccess, setReportSuccess] = useState(null);
+  const [key, setKey] = useState(0);
 
   const handleImageSubmit = (e) => {
     if (files.length > 0 && files.length + formData.imageUrls.length < 5) {
       const promises = [];
 
       for (let i = 0; i < files.length; i++) {
-        if (files.length > 0 && files.length + formData.imageUrls.length < 5) {
-          promises.push(storeImage(files[i]));
-        } else {
-          console.log("File must be an image and less than 2 MB");
-        }
+        promises.push(storeImage(files[i]));
       }
+
       Promise.all(promises)
         .then((urls) => {
           setFormData({
             ...formData,
             imageUrls: formData.imageUrls.concat(urls),
           });
+          setImageUploadProgress(null); // Reset upload progress after success
           setImageUploadError(false);
         })
         .catch((err) => {
           setImageUploadError(
             "Image upload failed: Each image must be less than 2MB."
           );
+          setImageUploadProgress(null); // Reset upload progress on error
         });
     } else {
       setImageUploadError("You can only upload up to 5 images per report.");
@@ -86,6 +98,56 @@ export default function CreateLostFoundPost() {
     });
   };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleDateChange = (date) => {
+    setFormData((prev) => ({
+      ...prev,
+      dateFound: date,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/items/report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReportSubmitError(data.message);
+        return;
+      }
+
+      setReportSuccess("Item reported successfully!");
+      setReportSubmitError(null);
+      // Reset the form fields
+      setFormData({
+        item: "",
+        dateFound: new Date(),
+        location: "",
+        description: "",
+        category: "",
+        imageUrls: [],
+      });
+      setFiles([]); // Also clear selected files
+      setKey((prevKey) => prevKey + 1); // Increment key to force re-render of file input
+    } catch (error) {
+      setReportSubmitError("Something went wrong");
+      setReportSuccess(null);
+    }
+  };
+
   const categories = [
     "Mobile Phones",
     "Laptops/Tablets",
@@ -125,7 +187,7 @@ export default function CreateLostFoundPost() {
       <h1 className="text-center text-3xl my-7 font-semibold">
         Report Found Item
       </h1>
-      <form className="flex flex-col gap-4">
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <TextInput
             type="text"
@@ -133,8 +195,14 @@ export default function CreateLostFoundPost() {
             required
             name="item"
             className="flex-auto sm:flex-1"
+            onChange={handleChange}
           />
-          <Select name="category" required className="w-full sm:w-1/4">
+          <Select
+            name="category"
+            required
+            className="w-full sm:w-1/4"
+            onChange={handleChange}
+          >
             <option value="">Select a category</option>
             {categories.map((category) => (
               <option key={category} value={category}>
@@ -143,36 +211,45 @@ export default function CreateLostFoundPost() {
             ))}
           </Select>
         </div>
-        <TextInput
-          type="date"
-          placeholder="Date Found"
+        <Datepicker
+          selected={formData.dateFound}
+          onChange={handleDateChange}
           required
-          name="dateFound"
         />
         <TextInput
           type="text"
           placeholder="Location Found"
           required
           name="location"
+          onChange={handleChange}
         />
-        <ReactQuill
-          theme="snow"
+        <textarea
+          className="block w-full p-2.5 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           placeholder="Describe the item..."
           required
-          onChange={(value) => {
-            setFormData((prev) => ({ ...prev, description: value }));
-          }}
-        />
+          rows="4"
+          name="description"
+          onChange={handleChange}
+        ></textarea>
+
         <div className="flex gap-4 items-center">
           <FileInput
+            key={key}
             type="file"
             id="images"
             accept="image/*"
             multiple
             onChange={(e) => setFiles(e.target.files)}
           />
-          <Button type="button" color="failure" onClick={handleImageSubmit}>
-            Upload Image
+          <Button
+            type="button"
+            gradientDuoTone="pinkToOrange"
+            onClick={handleImageSubmit}
+            disabled={imageUploadProgress !== null}
+          >
+            {imageUploadProgress
+              ? `Uploading ${imageUploadProgress}%`
+              : "Upload Image"}
           </Button>
         </div>
         {imageUploadError && <Alert color="failure">{imageUploadError}</Alert>}
@@ -202,6 +279,12 @@ export default function CreateLostFoundPost() {
         <Button type="submit" gradientDuoTone="pinkToOrange">
           Submit Found Item
         </Button>
+        {reportSuccess && (
+          <Alert color="success">{reportSuccess}</Alert> // Display the success alert
+        )}
+        {reportSubmitError && (
+          <Alert color="failure">{reportSubmitError}</Alert>
+        )}
       </form>
     </div>
   );
