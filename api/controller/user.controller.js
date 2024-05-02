@@ -77,21 +77,69 @@ export const updateUser = async (req, res, next) => {
   }
 };
 
-export const deleteUser = async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-  const targetUser = await User.findById(req.params.userId);
+export const changePassword = async (req, res, next) => {
+  try {
+    const userId = req.params.userId || req.user.id; // Allows admins to specify a user ID
+    const { currentPassword, newPassword } = req.body;
 
-  if (user.role !== "superAdmin") {
-    return next(
-      errorHandler(403, "Unauthorized: Only super admins can delete users.")
-    );
+    const user = await User.findById(userId);
+    if (!user) {
+      return next(errorHandler(404, "User not found"));
+    }
+
+    // Verify current password, but only if the user is changing their own password
+    if (userId === req.user.id) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return next(errorHandler(401, "Current password is incorrect"));
+      }
+    }
+
+    // Hash the new password
+    const hashedPassword = bcrypt.hashSync(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ status: 1, message: "Password changed successfully" });
+  } catch (error) {
+    next(error);
   }
+};
 
-  if (targetUser) {
-    await User.findByIdAndDelete(req.params.userId);
-    res.status(200).json("User has been deleted");
-  } else {
-    return next(errorHandler(404, "User not found"));
+export const deleteUser = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return next(errorHandler(404, "User not found"));
+    }
+
+    // Check if requester is authorized to delete user
+    if (req.user.role === "admin" && user.role === "admin") {
+      return next(
+        errorHandler(403, "Unauthorized: Admins cannot delete other admins")
+      );
+    }
+
+    if (req.user.role !== "superAdmin" && req.user.role !== "admin") {
+      return next(
+        errorHandler(
+          403,
+          "Unauthorized: Only super admins and admins can delete users."
+        )
+      );
+    }
+
+    // Delete user
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({ status: true, message: "User has been deleted" });
+  } catch (error) {
+    next(error);
   }
 };
 

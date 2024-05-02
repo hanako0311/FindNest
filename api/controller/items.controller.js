@@ -1,21 +1,26 @@
 import Item from "../models/items.model.js";
 import { errorHandler } from "../utils/error.js";
+import validator from "validator"; // npm install validator
 
 export const createItem = async (req, res, next) => {
   console.log("Received headers:", req.headers);
   console.log("Received request body:", req.body);
 
-  // Check if required fields are present, including imageUrls
+  // Destructure required fields from req.body
+  const { item, dateFound, location, description, imageUrls, category } =
+    req.body;
+
+  // Validate required fields are present and imageUrls is not empty
   if (
-    !req.body.item ||
-    !req.body.dateFound ||
-    !req.body.location ||
-    !req.body.imageUrls ||
-    req.body.imageUrls.length === 0
+    !item ||
+    !dateFound ||
+    !location ||
+    !description ||
+    !category ||
+    !imageUrls ||
+    imageUrls.length === 0
   ) {
-    console.log(
-      "Validation failed: Required fields are missing, including image URLs"
-    );
+    console.log("Validation failed: Required fields are missing or incomplete");
     return next(
       errorHandler(
         400,
@@ -24,10 +29,21 @@ export const createItem = async (req, res, next) => {
     );
   }
 
-  // Create new item object with imageUrls
+  // Validate URL format for each image URL
+  if (!imageUrls.every((url) => validator.isURL(url))) {
+    console.log("Validation failed: One or more image URLs are invalid");
+    return next(errorHandler(400, "Please provide valid URLs for all images"));
+  }
+
+  // Create new item object with imageUrls and userRef from authenticated user
   const newItem = new Item({
-    ...req.body,
-    userRef: req.user.id,
+    item,
+    dateFound,
+    location,
+    description,
+    imageUrls,
+    category,
+    userRef: req.user.id, // Assuming req.user is set by authentication middleware
   });
 
   try {
