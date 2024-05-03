@@ -1,7 +1,7 @@
 import { Alert, Button, TextInput, Modal } from "flowbite-react";
 import { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
-import { FaSignOutAlt } from "react-icons/fa";
+import { useSelector, useDispatch } from "react-redux";
+import { FaSignOutAlt, FaEye, FaEyeSlash } from "react-icons/fa";
 import {
   getDownloadURL,
   getStorage,
@@ -17,7 +17,6 @@ import {
   updateFailure,
   signoutSuccess,
 } from "../redux/user/userSlice";
-import { useDispatch } from "react-redux";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
 
 export default function DashProfile() {
@@ -30,7 +29,16 @@ export default function DashProfile() {
   const [updateUserSuccess, setUpdateUserSuccess] = useState(null);
   const [updateUserError, setUpdateUserError] = useState(null);
   const [showSignoutModal, setShowSignoutModal] = useState(false);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({
+    firstname: currentUser.firstname,
+    middlename: currentUser.middlename || "",
+    lastname: currentUser.lastname,
+    username: currentUser.username,
+    email: currentUser.email,
+    department: currentUser.department,
+    password: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const filePickerRef = useRef();
 
@@ -93,6 +101,10 @@ export default function DashProfile() {
         });
       }
     );
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   const handleChange = (e) => {
@@ -159,7 +171,7 @@ export default function DashProfile() {
   return (
     <div className="max-w-lg mx-auto p-3 w-full">
       <h1 className="my-7 text-center font-semibold text-3xl">Profile</h1>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <input
           type="file"
           accept="image/*"
@@ -168,8 +180,7 @@ export default function DashProfile() {
           hidden
         />
         <div
-          className="relative w-32 h-32 self-center cursor-pointer shadow-md
-        overflow-hidden rounded-full"
+          className="relative w-32 h-32 self-center cursor-pointer shadow-md overflow-hidden rounded-full"
           onClick={() => filePickerRef.current.click()}
         >
           {imageFileUploadProgress && (
@@ -206,26 +217,105 @@ export default function DashProfile() {
         {imageFileUploadError && (
           <Alert color="failure">{imageFileUploadError}</Alert>
         )}
-        <TextInput
-          type="text"
-          id="username"
-          placeholder="username"
-          defaultValue={currentUser.username}
-          onChange={handleChange}
-        />
-        <TextInput
-          type="text"
-          id="email"
-          placeholder="email"
-          defaultValue={currentUser.email}
-          onChange={handleChange}
-        />
-        <TextInput
-          type="password"
-          id="password"
-          placeholder="password"
-          onChange={handleChange}
-        />
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-wrap -mx-2">
+            <div className="w-1/2 px-2">
+              <label htmlFor="firstname" className="font-medium">
+                First Name
+              </label>
+              <TextInput
+                id="firstname"
+                type="text"
+                placeholder="First Name"
+                value={formData.firstname}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="w-1/2 px-2">
+              <label htmlFor="middlename" className="font-medium">
+                Middle Name (optional)
+              </label>
+              <TextInput
+                id="middlename"
+                type="text"
+                placeholder="Middle Name"
+                value={formData.middlename}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap -mx-2">
+            <div className="w-1/2 px-2">
+              <label htmlFor="lastname" className="font-medium">
+                Last Name
+              </label>
+              <TextInput
+                id="lastname"
+                type="text"
+                placeholder="Last Name"
+                value={formData.lastname}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="w-1/2 px-2">
+              <label htmlFor="username" className="font-medium">
+                Username
+              </label>
+              <TextInput
+                id="username"
+                type="text"
+                placeholder="Username"
+                value={formData.username}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor="email" className="font-medium">
+            Email
+          </label>
+          <TextInput
+            id="email"
+            type="text"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="department" className="font-medium">
+            Department
+          </label>
+          <TextInput
+            id="department"
+            type="text"
+            placeholder="Department"
+            value={formData.department}
+            onChange={handleChange}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="password" className="font-medium">
+            Password
+          </label>
+          <div className="relative">
+            <TextInput
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+            />
+            <div className="absolute inset-y-0 right-3 flex items-center text-sm leading-5">
+              <button type="button" onClick={togglePasswordVisibility}>
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </div>
+        </div>
         <Button
           type="submit"
           gradientDuoTone="redToYellow"
@@ -235,6 +325,7 @@ export default function DashProfile() {
           {loading ? "Loading..." : "Update"}
         </Button>
       </form>
+
       <div className="text-red-500 flex justify-end mt-5 ">
         <button
           onClick={() => setShowSignoutModal(true)}

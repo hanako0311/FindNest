@@ -10,6 +10,7 @@ import {
   HiViewBoards,
   HiDocumentReport,
   HiUsers,
+  HiOutlineDocumentSearch,
 } from "react-icons/hi";
 import { Disclosure } from "@headlessui/react";
 import { useEffect, useState } from "react";
@@ -52,7 +53,7 @@ export default function DashSidebar() {
   return (
     <Sidebar className="w-full md:w-56">
       <Sidebar.Items>
-        <Sidebar.ItemGroup>
+        <Sidebar.ItemGroup className="flex flex-col gap-1">
           <Link to="/dashboard?tab=analytics">
             <Sidebar.Item
               active={tab === "analytics"}
@@ -60,6 +61,15 @@ export default function DashSidebar() {
               as="div"
             >
               Dashboard
+            </Sidebar.Item>
+          </Link>
+          <Link to="/dashboard?tab=found-items">
+            <Sidebar.Item
+              active={tab === "found-items"}
+              icon={HiOutlineDocumentSearch}
+              as="div"
+            >
+              Found Items
             </Sidebar.Item>
           </Link>
           <Link to="/dashboard?tab=profile">
@@ -84,7 +94,7 @@ export default function DashSidebar() {
           </Link>
 
           {/* CRUD Dropdown */}
-          <div>
+          <div className="flex flex-col gap-2">
             <Sidebar.Item
               icon={HiViewBoards}
               active={tab.startsWith("crud")}
@@ -101,8 +111,8 @@ export default function DashSidebar() {
             </Sidebar.Item>
             {/* Nested Dropdown Items */}
             {tab.startsWith("crud") && (
-              <div className="pl-4">
-                <Link to="/dashboard/items">
+              <div className="pl-4 ">
+                <Link to="/dashboard?tab=crud-items">
                   <Sidebar.Item active={tab === "crud-items"}>
                     Items
                   </Sidebar.Item>

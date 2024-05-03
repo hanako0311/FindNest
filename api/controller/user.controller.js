@@ -20,14 +20,16 @@ export const updateUser = async (req, res, next) => {
     return next(errorHandler(403, "You are not allowed to update this user"));
   }
 
-  if (req.body.password) {
+  // Check if the password field is empty and ignore it if true
+  if (req.body.password && req.body.password.trim() !== "") {
     if (req.body.password.length < 6) {
-      // corrected spelling
       return next(
         errorHandler(400, "Password must be at least 6 characters long")
       );
     }
     req.body.password = bcrypt.hashSync(req.body.password, 10);
+  } else {
+    delete req.body.password; // Removes password field if empty
   }
 
   if (req.body.username) {
@@ -60,10 +62,14 @@ export const updateUser = async (req, res, next) => {
       req.params.userId,
       {
         $set: {
+          firstname: req.body.firstname,
+          middlename: req.body.middlename,
+          lastname: req.body.lastname,
           username: req.body.username,
           email: req.body.email,
-          profilePicture: req.body.profilePicture, // Ensure correct handling of profile picture
-          password: req.body.password,
+          department: req.body.department,
+          profilePicture: req.body.profilePicture,
+          ...(req.body.password && { password: req.body.password }), // Only add password if it's processed
         },
       },
       { new: true }

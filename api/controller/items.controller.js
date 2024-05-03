@@ -55,3 +55,32 @@ export const createItem = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getItems = async (req, res, next) => {
+  try {
+    const startIndex = parseInt(req.query.startIndex) || 0;
+    const limit = parseInt(req.query.limit) || 9;
+    const sortDirection = req.query.order === "asc" ? 1 : -1;
+
+    // Constructing the query object
+    let query = {};
+    if (req.query.item) query.item = req.query.item;
+    if (req.query.category) query.category = req.query.category;
+    if (req.query.searchTerm) {
+      query.$or = [
+        { item: { $regex: req.query.searchTerm, $options: "i" } },
+        { description: { $regex: req.query.searchTerm, $options: "i" } },
+      ];
+    }
+
+    const items = await Item.find(query)
+      .skip(startIndex)
+      .limit(limit)
+      .sort({ createdAt: sortDirection });
+
+    res.json(items);
+  } catch (error) {
+    console.error("Error fetching items:", error);
+    next(error);
+  }
+};

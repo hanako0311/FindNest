@@ -15,6 +15,7 @@ import {
 } from "firebase/storage";
 import { app } from "../firebase";
 import { HiOutlineTrash } from "react-icons/hi";
+import { useNavigate } from "react-router-dom";
 
 export default function CreateLostFoundPost() {
   const [files, setFiles] = useState([]);
@@ -32,8 +33,11 @@ export default function CreateLostFoundPost() {
   const [reportSuccess, setReportSuccess] = useState(null);
   const [key, setKey] = useState(0);
 
+  const navigate = useNavigate();
+
   const handleImageSubmit = (e) => {
-    if (files.length > 0 && files.length + formData.imageUrls.length < 5) {
+    if (files.length > 0 && files.length + formData.imageUrls.length <= 5) {
+      // Update condition to include <= 5
       const promises = [];
 
       for (let i = 0; i < files.length; i++) {
@@ -131,6 +135,9 @@ export default function CreateLostFoundPost() {
 
       setReportSuccess("Item reported successfully!");
       setReportSubmitError(null);
+
+      setTimeout(() => navigate("/dashboard?tab=found-items"), 3000); // Delay navigation for 3 seconds
+
       // Reset the form fields
       setFormData({
         item: "",
@@ -240,7 +247,14 @@ export default function CreateLostFoundPost() {
             accept="image/*"
             multiple
             onChange={(e) => setFiles(e.target.files)}
+            disabled={formData.imageUrls.length >= 5} // Disable the file input if the limit is reached
           />
+
+          {formData.imageUrls.length >= 5 && (
+            <Alert color="info">
+              You have reached the maximum limit of 5 images.
+            </Alert>
+          )}
           <Button
             type="button"
             gradientDuoTone="pinkToOrange"
