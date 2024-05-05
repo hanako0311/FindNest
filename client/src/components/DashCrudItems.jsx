@@ -61,6 +61,10 @@ export default function DashCrudItems() {
                       src={item.imageUrls[0]}
                       alt={item.item}
                       className="w-24 h-auto"
+                      onError={(e) => {
+                        e.target.onError = null; // Prevents looping
+                        e.target.src = "default-image.png"; // Specify your default image URL here
+                      }}
                     />
                   )}
                 </Table.Cell>

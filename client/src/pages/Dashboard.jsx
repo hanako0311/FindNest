@@ -5,6 +5,7 @@ import DashProfile from "../components/DashProfile";
 import DashAnalytics from "../components/DashAnalytics"; // Import the DashAnalytics component
 import DashFoundItem from "../components/DashFoundItem"; // Import the DashFoundItems component
 import DashCrudItems from "../components/DashCrudItems";
+import DashCrudUsers from "../components/DashCrudUsers";
 
 export default function Dashboard() {
   const location = useLocation();
@@ -29,6 +30,7 @@ export default function Dashboard() {
       {tab === "analytics" && <DashAnalytics />}
       {tab === "found-items" && <DashFoundItem />}
       {tab === "crud-items" && <DashCrudItems />}
+      {tab === "crud-users" && <DashCrudUsers />}
     </div>
   );
 }
