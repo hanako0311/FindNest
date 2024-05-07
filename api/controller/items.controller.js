@@ -84,3 +84,13 @@ export const getItems = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getItemDetails = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    res.json(item);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};

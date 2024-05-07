@@ -23,7 +23,7 @@ const AboutUsPage = () => {
     {
       name: "John Joshua Jallorina",
       role: "Full Stack Developer",
-      image: "/placeholders/joshua.jpg",
+      image: "/placeholders/joshua.jpeg",
     },
     {
       name: "John Gabriele Palo",

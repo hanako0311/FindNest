@@ -9,6 +9,7 @@ import Features from "./pages/Features";
 import Footer from "./components/Footer";
 import PrivateRoute from "./components/PrivateRoute";
 import ReportForm from "./pages/ReportForm";
+import ItemDetails from "./pages/ItemDetailsPage";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/report-form" element={<ReportForm />} />
+          <Route path="/item/:id" element={<ItemDetails />} />
         </Route>
       </Routes>
       <Footer />
