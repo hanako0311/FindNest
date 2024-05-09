@@ -9,6 +9,8 @@ import {
   HiChevronDown,
   HiViewBoards,
   HiOutlineDocumentSearch,
+  HiUserGroup,
+  HiArchive,
 } from "react-icons/hi";
 import { Disclosure } from "@headlessui/react";
 import { useEffect, useState } from "react";
@@ -125,20 +127,17 @@ export default function DashSidebar() {
             {tab.startsWith("crud") && (
               <div className="pl-4 ">
                 <Link to="/dashboard?tab=crud-items">
-                  <Sidebar.Item active={tab === "crud-items"}>
+                  <Sidebar.Item active={tab === "crud-items"} icon={HiArchive}>
                     Items
                   </Sidebar.Item>
                 </Link>
                 <Link to="/dashboard?tab=crud-users">
-                  // Then use this in your Sidebar.Item for Profile
                   <Sidebar.Item
-                    active={tab === "profile"}
-                    icon={HiUser}
-                    label={getRoleLabel(currentUser.role)} // Make sure currentUser and role exist
-                    labelColor="dark"
+                    active={tab === "users"}
+                    icon={HiUserGroup}
                     as="div"
                   >
-                    Profile
+                    Users
                   </Sidebar.Item>
                 </Link>
               </div>

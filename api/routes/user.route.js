@@ -5,6 +5,7 @@ import {
   test,
   updateUser,
   changePassword,
+  getUsers,
 } from "../controller/user.controller.js";
 import {
   verifyToken,
@@ -24,5 +25,6 @@ router.put(
   changePassword
 );
 router.post("/signout", signout);
+router.get("/getusers", verifyToken, verifyAdmin, getUsers);
 
 export default router;

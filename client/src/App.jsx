@@ -9,6 +9,8 @@ import Features from "./pages/Features";
 import Footer from "./components/Footer";
 import PrivateRoute from "./components/PrivateRoute";
 import ReportForm from "./pages/ReportForm";
+import OnlyAdminPrivateRoute from "./components/OnlyAdminPrivateRoute";
+import OnlySuperAdminPrivateRoute from "./components/OnlySuperAdminPrivateRoute";
 
 export default function App() {
   return (
@@ -21,6 +23,14 @@ export default function App() {
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/sign-in" element={<SignIn />} />
         <Route element={<PrivateRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/report-form" element={<ReportForm />} />
+        </Route>
+        <Route element={<OnlyAdminPrivateRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/report-form" element={<ReportForm />} />
+        </Route>
+        <Route element={<OnlySuperAdminPrivateRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/report-form" element={<ReportForm />} />
         </Route>
