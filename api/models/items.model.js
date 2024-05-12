@@ -63,6 +63,19 @@ const itemSchema = new mongoose.Schema(
         "Other",
       ],
     },
+    status: {
+      type: String,
+      required: true,
+      enum: ['available', 'claimed'], // Adding a status field with two possible values
+      default: 'available' // Default status is 'available'
+    },
+    claimantName: { // Who claimed the item
+      type: String,
+      default: ''
+    },
+    claimedDate: { // When was the item claimed
+      type: Date
+    },
   },
   { timestamps: true }
 );

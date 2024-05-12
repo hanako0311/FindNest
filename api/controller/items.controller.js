@@ -94,3 +94,29 @@ export const getItemDetails = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const claimItem = async (req, res) => {
+  const { itemId } = req.params; // Ensure this matches with your route parameter
+  const { name, date } = req.body; // Data sent from the frontend
+
+  try {
+    const updatedItem = await Item.findByIdAndUpdate(
+      itemId,
+      {
+        status: 'claimed',
+        claimantName: name,
+        claimedDate: date
+      },
+      { new: true, runValidators: true } // Return the updated object and run validators
+    );
+
+    if (!updatedItem) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+    res.json(updatedItem);
+  } catch (error) {
+    console.error("Error updating item claim:", error);
+    res.status(500).json({ message: 'Failed to claim item', error: error.toString() });
+  }
+};
+

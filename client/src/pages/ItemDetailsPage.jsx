@@ -20,9 +20,6 @@ function ItemDetail() {
   });
   const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  // const [zoomImage, setZoomImage] = useState(false);
-  // const [zoomCoords, setZoomCoords] = useState({ x: 0, y: 0 });
-
   useEffect(() => {
     setLoading(true);
     fetch(`/api/items/${id}`)
@@ -34,17 +31,6 @@ function ItemDetail() {
       })
       .catch(console.error);
   }, [id]);
-
-  // const handleImageZoom = (e) => {
-  //   const { left, top, width, height } = e.target.getBoundingClientRect();
-  //   const x = ((e.clientX - left) / width) * 100;
-  //   const y = ((e.clientY - top) / height) * 100;
-  //   setZoomCoords({ x, y });
-  //   setZoomImage(true);
-  // };
-
-  // const handleImageLeave = () => setZoomImage(false);
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -62,18 +48,7 @@ function ItemDetail() {
               src={item.imageUrls[activeImageIndex]}
               alt="Main Product"
               className="w-full object-contain h-[40rem]"
-              // onMouseMove={handleImageZoom}
-              // onMouseLeave={handleImageLeave}
             />
-            {/* {zoomImage && (
-              <div
-                className="absolute inset-0 bg-cover bg-no-repeat"
-                style={{
-                  backgroundImage: `url(${item.imageUrls[activeImageIndex]})`,
-                  backgroundPosition: `${zoomCoords.x}% ${zoomCoords.y}%`,
-                }}
-              ></div>
-            )} */}
           </div>
           <div className="flex overflow-auto gap-2 mt-2 justify-center">
             {item.imageUrls.map((url, index) => (
@@ -92,11 +67,24 @@ function ItemDetail() {
         <div className="flex-1">
           <h1 className="text-2xl font-bold">{item.item}</h1>
           <p className="text-sm mt-5">{item.brandName}</p>
-          <p className="text-lg font-semibold mb-5">{item.location}</p>
+          <p className="text-lg mb-5">
+            <span className="font-normal">Location Found:</span>
+            <span className="font-semibold"> {item.location}</span>
+          </p>
+          <p className="text-sm text-gray-500">Description</p>
           <p>{item.description}</p>
-          <Button className="mt-10" onClick={() => navigate("/verify")}>
-            Claim
-          </Button>
+          {item.status === "claimed" ? (
+            <Button disabled className="mt-10">
+              Claimed by {item.claimantName}
+            </Button>
+          ) : (
+            <Button
+              className="mt-10"
+              onClick={() => navigate(`/claim-form/${id}`)}
+            >
+              Claim
+            </Button>
+          )}
         </div>
       </div>
     </Card>
