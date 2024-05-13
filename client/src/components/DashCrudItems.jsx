@@ -24,7 +24,7 @@ export default function DashCrudItems() {
   }, [currentUser._id]);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       {" "}
       {/* This ensures that the component takes at least the height of the screen */}
       <div className="mx-auto p-3 w-full overflow-x-auto">

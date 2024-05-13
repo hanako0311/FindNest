@@ -26,14 +26,8 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/report-form" element={<ReportForm />} />
         </Route>
-        <Route element={<OnlyAdminPrivateRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/report-form" element={<ReportForm />} />
-        </Route>
-        <Route element={<OnlySuperAdminPrivateRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/report-form" element={<ReportForm />} />
-        </Route>
+        <Route element={<OnlyAdminPrivateRoute />}></Route>
+        <Route element={<OnlySuperAdminPrivateRoute />}></Route>
       </Routes>
       <Footer />
     </BrowserRouter>

@@ -25,6 +25,6 @@ router.put(
   changePassword
 );
 router.post("/signout", signout);
-router.get("/getusers", verifyToken, verifyAdmin, getUsers);
+router.get("/getusers", verifyToken, verifyToken, getUsers);
 
 export default router;

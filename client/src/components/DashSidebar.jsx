@@ -68,44 +68,40 @@ export default function DashSidebar() {
     <Sidebar className="w-full md:w-56">
       <Sidebar.Items>
         <Sidebar.ItemGroup className="flex flex-col gap-1">
-          <Link to="/dashboard?tab=analytics">
-            <Sidebar.Item
-              active={tab === "analytics"}
-              icon={HiViewGrid} // An icon that represents analytics
-              as="div"
-            >
-              Dashboard
-            </Sidebar.Item>
-          </Link>
-          <Link to="/dashboard?tab=found-items">
-            <Sidebar.Item
-              active={tab === "found-items"}
-              icon={HiOutlineDocumentSearch}
-              as="div"
-            >
-              Found Items
-            </Sidebar.Item>
-          </Link>
-          <Link to="/dashboard?tab=profile">
-            <Sidebar.Item
-              active={tab === "profile"}
-              icon={HiUser}
-              label={getRoleLabel(currentUser.role)} // Make sure currentUser and role exist
-              labelColor="dark"
-              as="div"
-            >
-              Profile
-            </Sidebar.Item>
-          </Link>
-          <Link to="/report-form">
-            <Sidebar.Item
-              active={tab === "report-form"}
-              icon={HiClipboardList}
-              as="div"
-            >
-              Report Form
-            </Sidebar.Item>
-          </Link>
+          <Sidebar.Item
+            active={tab === "analytics"}
+            icon={HiViewGrid}
+            as={Link}
+            to="/dashboard?tab=analytics"
+          >
+            Dashboard
+          </Sidebar.Item>
+          <Sidebar.Item
+            active={tab === "found-items"}
+            icon={HiOutlineDocumentSearch}
+            as={Link}
+            to="/dashboard?tab=found-items"
+          >
+            Found Items
+          </Sidebar.Item>
+          <Sidebar.Item
+            active={tab === "profile"}
+            icon={HiUser}
+            label={getRoleLabel(currentUser.role)} // Make sure currentUser and role exist
+            labelColor="dark"
+            as={Link}
+            to="/dashboard?tab=profile"
+          >
+            Profile
+          </Sidebar.Item>
+          <Sidebar.Item
+            active={tab === "report-form"}
+            icon={HiClipboardList}
+            as={Link}
+            to="/report-form"
+          >
+            Report Form
+          </Sidebar.Item>
 
           {/* CRUD Dropdown */}
           <div className="flex flex-col gap-2">
@@ -126,20 +122,24 @@ export default function DashSidebar() {
             {/* Nested Dropdown Items */}
             {tab.startsWith("crud") && (
               <div className="pl-4 ">
-                <Link to="/dashboard?tab=crud-items">
-                  <Sidebar.Item active={tab === "crud-items"} icon={HiArchive}>
-                    Items
-                  </Sidebar.Item>
-                </Link>
-                <Link to="/dashboard?tab=crud-users">
+                <Sidebar.Item
+                  active={tab === "crud-items"}
+                  icon={HiArchive}
+                  as={Link}
+                  to="/dashboard?tab=crud-items"
+                >
+                  Items
+                </Sidebar.Item>
+                {currentUser.role === "admin" && (
                   <Sidebar.Item
                     active={tab === "users"}
                     icon={HiUserGroup}
-                    as="div"
+                    as={Link}
+                    to="/dashboard?tab=crud-users"
                   >
                     Users
                   </Sidebar.Item>
-                </Link>
+                )}
               </div>
             )}
           </div>

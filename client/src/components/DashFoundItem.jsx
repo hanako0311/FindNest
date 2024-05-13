@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { Table } from "flowbite-react";
 import { Link } from "react-router-dom";
 
 export default function DashFoundItem() {
   const { currentUser } = useSelector((state) => state.user);
   const [items, setItems] = useState([]);
+  const [showMore, setShowMore] = useState(true);
+  const [searchTerm, setSearchTerm] = useState(""); //aaded this line
+  const [filteredItems, setFilteredItems] = useState([]); //added this line
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -14,6 +18,7 @@ export default function DashFoundItem() {
         );
         const data = await res.json();
         setItems(data);
+        setFilteredItems(data); // Initialize filteredItems with all items
       } catch (error) {
         console.error("Error fetching items:", error);
       }
@@ -22,10 +27,32 @@ export default function DashFoundItem() {
     fetchItems();
   }, [currentUser._id]);
 
+  const handleShowMore = async () => {
+    const res = await fetch(
+      `/api/items/getItems?userId=${currentUser._id}&startIndex=${items.length}`
+    );
+    const data = await res.json();
+    if (data.length < 12) {
+      setShowMore(false);
+    }
+    setItems((prevItems) => [...prevItems, ...data]);
+  };
+
+  // Update filtered items based on search term
+  useEffect(() => {
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    const filtered = items.filter(
+      (item) =>
+        item.item.toLowerCase().includes(lowerCaseSearchTerm) ||
+        item.category.toLowerCase().includes(lowerCaseSearchTerm)
+    );
+    setFilteredItems(filtered);
+  }, [searchTerm, items]);
+
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen w-screen">
       <div className="mx-auto p-3 w-full">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           {items.map((item) => (
             <div
               key={item._id}
@@ -78,6 +105,15 @@ export default function DashFoundItem() {
             </div>
           ))}
         </div>
+
+        {showMore && (
+          <button
+            onClick={handleShowMore}
+            className="w-full text-teal-500 self-center text-sm py-7"
+          >
+            Show More
+          </button>
+        )}
       </div>
     </div>
   );
