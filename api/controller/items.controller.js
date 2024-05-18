@@ -84,3 +84,63 @@ export const getItems = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getItemDetails = async (req, res) => {
+  try {
+    const item = await Item.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    res.json(item);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const claimItem = async (req, res) => {
+  const { itemId } = req.params; // Ensure this matches with your route parameter
+  const { name, date } = req.body; // Data sent from the frontend
+
+  try {
+    const updatedItem = await Item.findByIdAndUpdate(
+      itemId,
+      {
+        status: "claimed",
+        claimantName: name,
+        claimedDate: date,
+      },
+      { new: true, runValidators: true } // Return the updated object and run validators
+    );
+
+    if (!updatedItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.json(updatedItem);
+  } catch (error) {
+    console.error("Error updating item claim:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to claim item", error: error.toString() });
+  }
+};
+
+export const getTotalItems = async (req, res) => {
+  try {
+    const totalItems = await Item.countDocuments();
+    // Example of additional metrics
+    const itemsClaimed = await Item.countDocuments({ status: "claimed" });
+    const itemsPending = await Item.countDocuments({ status: "available" });
+
+    res.json({
+      totalItemsReported: totalItems,
+      itemsClaimed: itemsClaimed,
+      itemsPending: itemsPending,
+    });
+  } catch (error) {
+    console.error("Failed to fetch item counts:", error);
+    res
+      .status(500)
+      .json({
+        message: "Failed to fetch item counts",
+        error: error.toString(),
+      });
+  }
+};

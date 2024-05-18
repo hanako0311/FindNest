@@ -9,6 +9,8 @@ import Features from "./pages/Features";
 import Footer from "./components/Footer";
 import PrivateRoute from "./components/PrivateRoute";
 import ReportForm from "./pages/ReportForm";
+import ItemDetails from "./pages/ItemDetailsPage";
+import ClaimForm from "./pages/ClaimForm";
 import OnlyAdminPrivateRoute from "./components/OnlyAdminPrivateRoute";
 import OnlySuperAdminPrivateRoute from "./components/OnlySuperAdminPrivateRoute";
 
@@ -25,6 +27,8 @@ export default function App() {
         <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/report-form" element={<ReportForm />} />
+          <Route path="/item/:id" element={<ItemDetails />} />
+          <Route path="/claim-form/:itemId" element={<ClaimForm />} />
         </Route>
         <Route element={<OnlyAdminPrivateRoute />}></Route>
         <Route element={<OnlySuperAdminPrivateRoute />}></Route>

@@ -132,7 +132,7 @@ export default function DashSidebar() {
                 </Sidebar.Item>
                 {currentUser.role === "admin" && (
                   <Sidebar.Item
-                    active={tab === "users"}
+                    active={tab === "crud-users"}
                     icon={HiUserGroup}
                     as={Link}
                     to="/dashboard?tab=crud-users"
