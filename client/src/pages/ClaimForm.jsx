@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { TextInput, Button, Datepicker } from "flowbite-react";
+import { TextInput, Button, Datepicker, Alert } from "flowbite-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { HiCheck } from "react-icons/hi";
 
 export default function ClaimForm() {
   const { itemId } = useParams(); // Retrieve itemId from URL
@@ -8,6 +9,7 @@ export default function ClaimForm() {
     name: "",
     date: new Date(),
   });
+  const [showAlert, setShowAlert] = useState(false); // State to handle alert visibility
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -42,8 +44,11 @@ export default function ClaimForm() {
       });
 
       if (response.ok) {
-        alert("Form Submitted Successfully!");
-        navigate(`/item/${itemId}`); // Redirect back to the item details page
+        setShowAlert(true); // Show success alert
+        setTimeout(() => {
+          setShowAlert(false); // Hide alert after a delay
+          navigate(`/item/${itemId}`); // Redirect back to the item details page
+        }, 3000); // Delay for alert visibility
       } else {
         const errorData = await response.json(); // Parsing response to get error details
         throw new Error(errorData.message || "Failed to submit claim");
@@ -74,6 +79,18 @@ export default function ClaimForm() {
         <Button type="submit" gradientDuoTone="cyanToBlue">
           Confirm
         </Button>
+        {showAlert && (
+          <Alert
+            type="success"
+            onClose={() => setShowAlert(false)}
+            className="mt-4"
+          >
+            <div className="flex items-center">
+              <HiCheck className="h-5 w-5 mr-2" />
+              Item Claimed Successfully!
+            </div>
+          </Alert>
+        )}
       </form>
     </div>
   );

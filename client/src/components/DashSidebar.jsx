@@ -103,46 +103,25 @@ export default function DashSidebar() {
             Report Form
           </Sidebar.Item>
 
-          {/* CRUD Dropdown */}
-          <div className="flex flex-col gap-2">
+          <Sidebar.Item
+            active={tab === "crud-items"}
+            icon={HiArchive}
+            as={Link}
+            to="/dashboard?tab=crud-items"
+          >
+            Items
+          </Sidebar.Item>
+          {(currentUser.role === "admin" ||
+            currentUser.role === "superAdmin") && (
             <Sidebar.Item
-              icon={HiViewBoards}
-              active={tab.startsWith("crud")}
-              onClick={() => setTab(tab.startsWith("crud") ? "" : "crud")}
+              active={tab === "crud-users"}
+              icon={HiUserGroup}
+              as={Link}
+              to="/dashboard?tab=crud-users"
             >
-              <div className="flex justify-between w-full">
-                CRUD
-                {tab.startsWith("crud") ? (
-                  <HiChevronUp className="w-5 h-5" />
-                ) : (
-                  <HiChevronDown className="w-5 h-5" />
-                )}
-              </div>
+              Users
             </Sidebar.Item>
-            {/* Nested Dropdown Items */}
-            {tab.startsWith("crud") && (
-              <div className="pl-4 ">
-                <Sidebar.Item
-                  active={tab === "crud-items"}
-                  icon={HiArchive}
-                  as={Link}
-                  to="/dashboard?tab=crud-items"
-                >
-                  Items
-                </Sidebar.Item>
-                {currentUser.role === "admin" && (
-                  <Sidebar.Item
-                    active={tab === "crud-users"}
-                    icon={HiUserGroup}
-                    as={Link}
-                    to="/dashboard?tab=crud-users"
-                  >
-                    Users
-                  </Sidebar.Item>
-                )}
-              </div>
-            )}
-          </div>
+          )}
           <Sidebar.Item
             icon={HiArrowSmRight}
             className="cursor-pointer"

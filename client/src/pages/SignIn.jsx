@@ -1,12 +1,12 @@
-import { Alert, Button, Label, Spinner, TextInput } from 'flowbite-react';
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import {
   signInStart,
   signInSuccess,
   signInFailure,
-} from '../redux/user/userSlice';
+} from "../redux/user/userSlice";
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
@@ -21,13 +21,13 @@ export default function SignIn() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
-      return dispatch(signInFailure('Please fill all the fields'));
+      return dispatch(signInFailure("Please fill all the fields"));
     }
     try {
       dispatch(signInStart());
-      const res = await fetch('/api/auth/signin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
       const data = await res.json();
@@ -37,7 +37,7 @@ export default function SignIn() {
 
       if (res.ok) {
         dispatch(signInSuccess(data));
-        navigate('/'); // Redirect to the desired page after login
+        navigate("/dashboard?tab=analytics"); // Redirect to the desired page after login
       }
     } catch (error) {
       dispatch(signInFailure(error.message));
@@ -45,55 +45,55 @@ export default function SignIn() {
   };
 
   return (
-    <div className='min-h-screen mt-20'>
-      <div className='flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5'>
+    <div className="min-h-screen mt-20">
+      <div className="flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5">
         {/* left */}
-        <div className='flex-1'>
-          <Link to='/' className='font-bold dark:text-white text-4xl'>
+        <div className="flex-1">
+          <Link to="/" className="font-bold dark:text-white text-4xl">
             FindNest
           </Link>
-          <p className='text-sm mt-5'>
+          <p className="text-sm mt-5">
             Please sign in with your staff account credentials.
           </p>
         </div>
         {/* right */}
-        <div className='flex-1'>
-          <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+        <div className="flex-1">
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div>
-              <Label htmlFor='email' value='Your email' />
+              <Label htmlFor="email" value="Your email" />
               <TextInput
-                type='email'
-                placeholder='name@company.com'
-                id='email'
+                type="email"
+                placeholder="name@company.com"
+                id="email"
                 onChange={handleChange}
               />
             </div>
             <div>
-              <Label htmlFor='password' value='Your password' />
+              <Label htmlFor="password" value="Your password" />
               <TextInput
-                type='password'
-                placeholder='**********'
-                id='password'
+                type="password"
+                placeholder="**********"
+                id="password"
                 onChange={handleChange}
               />
             </div>
             <Button
-              gradientDuoTone='purpleToPink'
-              type='submit'
+              gradientDuoTone="purpleToPink"
+              type="submit"
               disabled={loading}
             >
               {loading ? (
                 <>
-                  <Spinner size='sm' />
-                  <span className='pl-3'>Loading...</span>
+                  <Spinner size="sm" />
+                  <span className="pl-3">Loading...</span>
                 </>
               ) : (
-                'Sign In'
+                "Sign In"
               )}
             </Button>
           </form>
           {errorMessage && (
-            <Alert className='mt-5' color='failure'>
+            <Alert className="mt-5" color="failure">
               {errorMessage}
             </Alert>
           )}

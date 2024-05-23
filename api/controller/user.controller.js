@@ -34,7 +34,6 @@ export const updateUser = async (req, res, next) => {
 
   if (req.body.username) {
     if (req.body.username.length < 7 || req.body.username.length > 20) {
-      // corrected spelling
       return next(
         errorHandler(400, "Username must be between 7 and 20 characters long")
       );
@@ -53,9 +52,15 @@ export const updateUser = async (req, res, next) => {
   }
 
   try {
-    // Add role update restriction: only superAdmin can change roles
-    if (req.body.role && req.user.role !== "superAdmin") {
-      return next(errorHandler(403, "Only super admins can change user roles"));
+    // Add role update restriction: only superAdmin and admin can change roles
+    if (
+      req.body.role &&
+      req.user.role !== "superAdmin" &&
+      req.user.role !== "admin"
+    ) {
+      return next(
+        errorHandler(403, "Only admins and super admins can change user roles")
+      );
     }
 
     const updateUser = await User.findByIdAndUpdate(
@@ -70,6 +75,7 @@ export const updateUser = async (req, res, next) => {
           department: req.body.department,
           profilePicture: req.body.profilePicture,
           ...(req.body.password && { password: req.body.password }), // Only add password if it's processed
+          ...(req.body.role && { role: req.body.role }), // Only add role if it's present in request
         },
       },
       { new: true }
@@ -124,14 +130,17 @@ export const deleteUser = async (req, res, next) => {
       return next(errorHandler(404, "User not found"));
     }
 
-    // Check if requester is authorized to delete user
-    if (req.user.role === "admin" && user.role === "admin") {
-      return next(
-        errorHandler(403, "Unauthorized: Admins cannot delete other admins")
-      );
-    }
-
-    if (req.user.role !== "superAdmin" && req.user.role !== "admin") {
+    // Authorization checks
+    if (req.user.role === "admin") {
+      if (user.role === "admin" || user.role === "superAdmin") {
+        return next(
+          errorHandler(
+            403,
+            "Unauthorized: Admins cannot delete other admins or super admins"
+          )
+        );
+      }
+    } else if (req.user.role !== "superAdmin") {
       return next(
         errorHandler(
           403,
@@ -197,7 +206,6 @@ export const getUsers = async (req, res, next) => {
       totalUsers,
       lastMonthUsers,
     });
-    
   } catch (error) {
     next(error);
   }

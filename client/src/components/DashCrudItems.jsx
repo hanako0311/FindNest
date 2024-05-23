@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Table, Button, Modal } from "flowbite-react";
+import { HiCheckCircle, HiXCircle } from "react-icons/hi";
+import { Table, Button, Modal, FileInput, Toast } from "flowbite-react";
 import { Link } from "react-router-dom";
 import {
   HiOutlineExclamationCircle,
@@ -11,6 +12,13 @@ import {
   HiPencilAlt,
   HiTrash,
 } from "react-icons/hi";
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
+import { app } from "../firebase";
 
 export default function DashCrudItems() {
   const { currentUser } = useSelector((state) => state.user);
@@ -21,7 +29,6 @@ export default function DashCrudItems() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [itemIdToDelete, setItemIdToDelete] = useState("");
   const [itemToEdit, setItemToEdit] = useState({
-    userRef: currentUser._id,
     item: "",
     dateFound: "",
     location: "",
@@ -32,13 +39,16 @@ export default function DashCrudItems() {
     claimantName: "",
     claimedDate: "",
   });
+  const [files, setFiles] = useState([]);
+  const [imageUploadProgress, setImageUploadProgress] = useState(null);
+  const [imageUploadError, setImageUploadError] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const res = await fetch(
-          `/api/items/getItems?userId=${currentUser._id}`
-        );
+        const res = await fetch("/api/items/getItems");
         const data = await res.json();
         setItems(data);
         if (data.length < 9) {
@@ -50,12 +60,10 @@ export default function DashCrudItems() {
     };
 
     fetchItems();
-  }, [currentUser._id]);
+  }, []);
 
   const handleShowMore = async () => {
-    const res = await fetch(
-      `/api/items/getItems?userId=${currentUser._id}&startIndex=${items.length}`
-    );
+    const res = await fetch(`/api/items/getItems?startIndex=${items.length}`);
     const data = await res.json();
     if (data.length < 9) {
       setShowMore(false);
@@ -65,25 +73,37 @@ export default function DashCrudItems() {
 
   const handleDeleteItem = async () => {
     try {
-      const res = await fetch(`/api/items/delete/${itemIdToDelete}`, {
+      const res = await fetch(`/api/items/deleteItem/${itemIdToDelete}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (res.ok) {
         setItems((prev) => prev.filter((item) => item._id !== itemIdToDelete));
         setShowModal(false);
+        setSuccessMessage("Item deleted successfully.");
+        setTimeout(() => setSuccessMessage(""), 3000);
       } else {
-        console.log(data.message);
+        setErrorMessage(data.message);
+        setTimeout(() => setErrorMessage(""), 3000);
       }
     } catch (error) {
-      console.log(error.message);
+      setErrorMessage("Error deleting item.");
+      setTimeout(() => setErrorMessage(""), 3000);
     }
   };
 
-  const handleSaveItem = async () => {
+  const handleSaveItem = async (e) => {
+    e.preventDefault();
+    if (files.length > 0) {
+      const imageUrls = await uploadImages(files);
+      setItemToEdit((prev) => ({ ...prev, imageUrls }));
+    }
+
     try {
       const res = await fetch(
-        `/api/items/${itemToEdit._id ? `update/${itemToEdit._id}` : "create"}`,
+        `/api/items/${
+          itemToEdit._id ? `updateItem/${itemToEdit._id}` : "report"
+        }`,
         {
           method: itemToEdit._id ? "PUT" : "POST",
           headers: {
@@ -96,29 +116,35 @@ export default function DashCrudItems() {
       if (res.ok) {
         setItems((prev) =>
           itemToEdit._id
-            ? prev.map((item) =>
-                item._id === itemToEdit._id ? data.item : item
-              )
-            : [...prev, data.item]
+            ? prev.map((item) => (item._id === itemToEdit._id ? data : item))
+            : [...prev, data]
         );
         setShowAddModal(false);
         setShowEditModal(false);
+        setSuccessMessage(
+          `Item ${itemToEdit._id ? "updated" : "added"} successfully.`
+        );
+        setTimeout(() => setSuccessMessage(""), 3000);
       } else {
-        console.log(data.message);
+        setErrorMessage(data.message);
+        setTimeout(() => setErrorMessage(""), 3000);
       }
     } catch (error) {
-      console.log(error.message);
+      setErrorMessage("Error saving item.");
+      setTimeout(() => setErrorMessage(""), 3000);
     }
   };
 
   const handleEditItem = (item) => {
-    setItemToEdit(item);
+    setItemToEdit({
+      ...item,
+      dateFound: new Date(item.dateFound).toISOString().split("T")[0], // Format date to yyyy-MM-dd
+    });
     setShowEditModal(true);
   };
 
   const handleAddItem = () => {
     setItemToEdit({
-      userRef: currentUser._id,
       item: "",
       dateFound: "",
       location: "",
@@ -129,11 +155,73 @@ export default function DashCrudItems() {
       claimantName: "",
       claimedDate: "",
     });
+    setFiles([]);
     setShowAddModal(true);
+  };
+
+  const uploadImages = async (files) => {
+    const promises = [];
+    for (let i = 0; i < files.length; i++) {
+      promises.push(storeImage(files[i]));
+    }
+    return Promise.all(promises);
+  };
+
+  const storeImage = async (file) => {
+    return new Promise((resolve, reject) => {
+      const storage = getStorage(app);
+      const fileName = new Date().getTime() + file.name;
+      const storageRef = ref(storage, fileName);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setImageUploadProgress(progress);
+        },
+        (error) => {
+          console.error("Upload error:", error);
+          setImageUploadError("Image upload failed.");
+          reject(error);
+        },
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref)
+            .then((downloadURL) => {
+              resolve(downloadURL);
+            })
+            .catch((error) => {
+              console.error("Failed to get download URL:", error);
+              setImageUploadError("Failed to get download URL.");
+              reject(error);
+            });
+        }
+      );
+    });
   };
 
   return (
     <div className="container mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
+      {/* Toast Messages */}
+      {successMessage && (
+        <Toast className="fixed top-4 right-4 z-50">
+          <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-500 dark:bg-green-800 dark:text-green-200">
+            <HiCheckCircle className="h-5 w-5" />
+          </div>
+          <div className="ml-3 text-sm font-normal">{successMessage}</div>
+          <Toast.Toggle />
+        </Toast>
+      )}
+      {errorMessage && (
+        <Toast className="fixed top-4 right-4 z-50">
+          <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-500 dark:bg-red-800 dark:text-red-200">
+            <HiXCircle className="h-5 w-5" />
+          </div>
+          <div className="ml-3 text-sm font-normal">{errorMessage}</div>
+          <Toast.Toggle />
+        </Toast>
+      )}
+
       <div className="p-3 w-full overflow-x-auto flex-1">
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">
           All Items
@@ -283,12 +371,7 @@ export default function DashCrudItems() {
       >
         <Modal.Header>Add new item</Modal.Header>
         <Modal.Body>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSaveItem();
-            }}
-          >
+          <form onSubmit={handleSaveItem}>
             <div className="grid grid-cols-6 gap-6">
               <div className="col-span-6 sm:col-span-3">
                 <label
@@ -442,21 +525,23 @@ export default function DashCrudItems() {
                 >
                   Image URLs
                 </label>
-                <input
-                  type="text"
-                  name="imageUrls"
-                  value={itemToEdit.imageUrls.join(",")}
-                  onChange={(e) =>
-                    setItemToEdit({
-                      ...itemToEdit,
-                      imageUrls: e.target.value.split(","),
-                    })
-                  }
-                  id="imageUrls"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Comma separated URLs"
-                  required
+                <FileInput
+                  type="file"
+                  id="images"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => setFiles(e.target.files)}
                 />
+                <Button
+                  type="button"
+                  gradientDuoTone="pinkToOrange"
+                  onClick={() => uploadImages(files)}
+                  disabled={imageUploadProgress !== null}
+                >
+                  {imageUploadProgress
+                    ? `Uploading ${imageUploadProgress}%`
+                    : "Upload Images"}
+                </Button>
               </div>
             </div>
             <div className="items-center p-6 border-t border-gray-200 rounded-b dark:border-gray-700">
@@ -480,12 +565,7 @@ export default function DashCrudItems() {
       >
         <Modal.Header>Edit item</Modal.Header>
         <Modal.Body>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSaveItem();
-            }}
-          >
+          <form onSubmit={handleSaveItem}>
             <div className="grid grid-cols-6 gap-6">
               <div className="col-span-6 sm:col-span-3">
                 <label
@@ -639,21 +719,23 @@ export default function DashCrudItems() {
                 >
                   Image URLs
                 </label>
-                <input
-                  type="text"
-                  name="imageUrls"
-                  value={itemToEdit.imageUrls.join(",")}
-                  onChange={(e) =>
-                    setItemToEdit({
-                      ...itemToEdit,
-                      imageUrls: e.target.value.split(","),
-                    })
-                  }
-                  id="imageUrls"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Comma separated URLs"
-                  required
+                <FileInput
+                  type="file"
+                  id="images"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => setFiles(e.target.files)}
                 />
+                <Button
+                  type="button"
+                  gradientDuoTone="pinkToOrange"
+                  onClick={() => uploadImages(files)}
+                  disabled={imageUploadProgress !== null}
+                >
+                  {imageUploadProgress
+                    ? `Uploading ${imageUploadProgress}%`
+                    : "Upload Images"}
+                </Button>
               </div>
             </div>
             <div className="items-center p-6 border-t border-gray-200 rounded-b dark:border-gray-700">

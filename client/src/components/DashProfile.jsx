@@ -233,7 +233,7 @@ export default function DashProfile() {
             </div>
             <div className="w-1/2 px-2">
               <label htmlFor="middlename" className="font-medium">
-                Middle Name (optional)
+                Middle Name
               </label>
               <TextInput
                 id="middlename"

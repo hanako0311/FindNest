@@ -13,6 +13,7 @@
     "@headlessui/react": "^1.7.19",
     "@reduxjs/toolkit": "^2.2.3",
     "chart.js": "^4.4.2",
+    "date-fns": "^3.6.0",
     "firebase": "^10.11.0",
     "flowbite": "^2.3.0",
     "flowbite-react": "^0.8.0",

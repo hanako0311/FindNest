@@ -24,32 +24,69 @@ ChartJS.register(
   LineElement
 );
 
+const categories = [
+  "Mobile Phones",
+  "Laptops/Tablets",
+  "Headphones/Earbuds",
+  "Chargers and Cables",
+  "Cameras",
+  "Electronic Accessories",
+  "Textbooks",
+  "Notebooks",
+  "Stationery Items",
+  "Art Supplies",
+  "Calculators",
+  "Coats and Jackets",
+  "Hats and Caps",
+  "Scarves and Gloves",
+  "Bags and Backpacks",
+  "Sunglasses",
+  "Jewelry and Watches",
+  "Umbrellas",
+  "Wallets and Purses",
+  "ID Cards and Passports",
+  "Keys",
+  "Personal Care Items",
+  "Sports Gear",
+  "Gym Equipment",
+  "Bicycles and Skateboards",
+  "Musical Instruments",
+  "Water Bottles",
+  "Lunch Boxes",
+  "Toys and Games",
+  "Decorative Items",
+  "Other",
+];
+
 export default function DashAnalytics() {
-  const [analyticsData, setAnalyticsData] = useState({
-    totalItemsReported: 0,
-    itemsClaimed: 0,
-    itemsPending: 0,
-  });
+  // const [analyticsData, setAnalyticsData] = useState({
+  //   totalItemsReported: 0,
+  //   itemsClaimed: 0,
+  //   itemsPending: 0,
+  // });
 
+  const [totalItemsReported, setTotalItemsReported] = useState(0);
+  const [itemsClaimed, setItemsClaimed] = useState(0);
+  const [itemsPending, setItemsPending] = useState(0);
   const currentUser = useSelector((state) => state.user.currentUser);
-
-  const [items, setItems] = useState([]);
-
-  const fetchAnalytics = async () => {
-    try {
-      const response = await fetch("/api/items/getTotalItems");
-      if (!response.ok) {
-        throw new Error("Failed to fetch analytics data");
-      }
-      const data = await response.json();
-      setAnalyticsData(data);
-    } catch (error) {
-      console.error("Error fetching analytics data:", error);
-    }
-  };
-
   const [itemsFoundCount, setItemsFoundCount] = useState(Array(7).fill(0));
   const [itemsClaimedCount, setItemsClaimedCount] = useState(Array(7).fill(0));
+  const [items, setItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+
+  // const fetchAnalytics = async () => {
+  //   try {
+  //     const response = await fetch("/api/items/getTotalItems");
+  //     if (!response.ok) {
+  //       throw new Error("Failed to fetch analytics data");
+  //     }
+  //     const data = await response.json();
+  //     setAnalyticsData(data);
+  //   } catch (error) {
+  //     console.error("Error fetching analytics data:", error);
+  //   }
+  // };
 
   // Fetch items data
   const fetchItems = async () => {
@@ -61,6 +98,10 @@ export default function DashAnalytics() {
       const now = new Date();
       const foundCounts = Array(7).fill(0);
       const claimedCounts = Array(7).fill(0);
+
+      let totalItemsReported = 0;
+      let itemsClaimed = 0;
+      let itemsPending = 0;
 
       fetchedItems.forEach((item) => {
         // Always add the 'Found' entry
@@ -81,6 +122,7 @@ export default function DashAnalytics() {
             claimedCounts[daysAgoClaimed]++;
           }
         }
+
         modifiedItems.push({
           ...item,
           action: "Found",
@@ -92,6 +134,8 @@ export default function DashAnalytics() {
           sortDate: new Date(item.createdAt),
         });
 
+        totalItemsReported++;
+        itemsPending++;
         // Add 'Claimed' entry if the item has been claimed
         if (item.status === "claimed" && item.claimedDate) {
           modifiedItems.push({
@@ -104,9 +148,14 @@ export default function DashAnalytics() {
             }),
             sortDate: new Date(item.claimedDate),
           });
+          itemsClaimed++;
+          itemsPending--;
         }
       });
 
+      setTotalItemsReported(totalItemsReported);
+      setItemsClaimed(itemsClaimed);
+      setItemsPending(itemsPending);
       setItems(modifiedItems.sort((a, b) => b.sortDate - a.sortDate));
       setItemsFoundCount(foundCounts.reverse());
       setItemsClaimedCount(claimedCounts.reverse());
@@ -115,13 +164,63 @@ export default function DashAnalytics() {
     }
   };
 
+  useEffect(() => {
+    // const totalItemsReported = items.length;
+    // const itemsClaimed = items.filter((item) => item.status === "claimed").length;
+    // const itemsPending = items.filter((item) => item.status === "available").length;
+    // // setAnalyticsData({
+    // //   totalItemsReported,
+    // //   itemsClaimed,
+    // //   itemsPending,
+    // // });
+
+    // setTotalItemsReported(totalItemsReported);
+    // setItemsClaimed(itemsClaimed);
+    // setItemsPending(itemsPending);
+    // Recompute counts for the past 7 days
+    const foundCounts = Array(7).fill(0);
+    const claimedCounts = Array(7).fill(0);
+    const now = new Date();
+
+    items.forEach((item) => {
+      const createdAt = new Date(item.createdAt);
+      const daysAgoFound = Math.floor(
+        (now - createdAt) / (1000 * 60 * 60 * 24)
+      );
+      if (daysAgoFound < 7) {
+        foundCounts[daysAgoFound]++;
+      }
+
+      if (item.status === "claimed" && item.claimedDate) {
+        const claimedDate = new Date(item.claimedDate);
+        const daysAgoClaimed = Math.floor(
+          (now - claimedDate) / (1000 * 60 * 60 * 24)
+        );
+        if (daysAgoClaimed < 7) {
+          claimedCounts[daysAgoClaimed]++;
+        }
+      }
+    });
+
+    setItemsFoundCount(foundCounts.reverse());
+    setItemsClaimedCount(claimedCounts.reverse());
+  }, [items]);
+  useEffect(() => {
+    const filtered = items.filter((item) => {
+      const matchesCategory = selectedCategory
+        ? item.category === selectedCategory
+        : true;
+      return matchesCategory;
+    });
+    setFilteredItems(filtered);
+  }, [selectedCategory, items]);
   //Pie Graph
   const data = {
     labels: ["Items Claimed", "Unclaimed Items"], // Labels for segments
     datasets: [
       {
         label: "Item Status",
-        data: [analyticsData.itemsClaimed, analyticsData.itemsPending], // Data points
+        data: [itemsClaimed, itemsPending], // Data points
         backgroundColor: [
           "rgba(14, 159, 110, 0.8)", // green
           "rgba(231, 33, 33, 0.8)", // red
@@ -204,7 +303,6 @@ export default function DashAnalytics() {
 
   useEffect(() => {
     if (currentUser && currentUser._id) {
-      fetchAnalytics(); // Fetch analytics data
       fetchItems(); // Fetch items for audit logs
     }
   }, [currentUser._id]);
@@ -219,17 +317,15 @@ export default function DashAnalytics() {
         <div className="flex flex-row justify-around items-center flex-wrap">
           <div className="flex flex-col p-3 bg-blue-500 gap-4 md:w-72 w-full rounded-md shadow-md text-white">
             Total Items Reported:{" "}
-            <span className="font-semibold">
-              {analyticsData.totalItemsReported}
-            </span>
+            <span className="font-semibold">{totalItemsReported}</span>
           </div>
           <div className="flex flex-col p-3 bg-green-500 gap-4 md:w-72 w-full rounded-md shadow-md text-white">
             Items Successfully Claimed:{" "}
-            <span className="font-semibold">{analyticsData.itemsClaimed}</span>
+            <span className="font-semibold">{itemsClaimed}</span>
           </div>
           <div className="flex flex-col p-3 bg-red-800 gap-4 md:w-72 w-full rounded-md shadow-md text-white">
             Unclaimed Items:{" "}
-            <span className="font-semibold">{analyticsData.itemsPending}</span>
+            <span className="font-semibold">{itemsPending}</span>
           </div>
         </div>
         {/* Statistics End */}

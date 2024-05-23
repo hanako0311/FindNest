@@ -112,6 +112,9 @@ export default function Header() {
                 {currentUser.email}
               </span>
             </Dropdown.Header>
+            <Link to={"/dashboard?tab=analytics"}>
+              <Dropdown.Item>Dashboard</Dropdown.Item>
+            </Link>
             <Link to={"/dashboard?tab=profile"}>
               <Dropdown.Item>Profile</Dropdown.Item>
             </Link>
@@ -130,18 +133,22 @@ export default function Header() {
         <Navbar.Toggle />
       </div>
       <Navbar.Collapse>
-        <Navbar.Link active={path === "/"} as={"div"}>
-          <Link to="/">Home</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === "/about-us"} as={"div"}>
-          <Link to="/about-us">About Us</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === "/features"} as={"div"}>
-          <Link to="/features">Features</Link>
-        </Navbar.Link>
-        <Navbar.Link active={path === "/contact-us"} as={"div"}>
-          <Link to="/contact-us">Contact Us</Link>
-        </Navbar.Link>
+        {!path.startsWith("/dashboard") && (
+          <>
+            <Navbar.Link active={path === "/"} as={"div"}>
+              <Link to="/">Home</Link>
+            </Navbar.Link>
+            <Navbar.Link active={path === "/about-us"} as={"div"}>
+              <Link to="/about-us">About Us</Link>
+            </Navbar.Link>
+            <Navbar.Link active={path === "/features"} as={"div"}>
+              <Link to="/features">Features</Link>
+            </Navbar.Link>
+            <Navbar.Link active={path === "/contact-us"} as={"div"}>
+              <Link to="/contact-us">Contact Us</Link>
+            </Navbar.Link>
+          </>
+        )}
       </Navbar.Collapse>
 
       <Modal

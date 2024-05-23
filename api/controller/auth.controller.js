@@ -12,6 +12,7 @@ export const createuser = async (req, res) => {
     email,
     password,
     department,
+    role, // Include role in the request body
   } = req.body;
 
   // Check if department is one of the allowed values
@@ -57,11 +58,11 @@ export const createuser = async (req, res) => {
       .json({ message: "Username or email is already in use" });
   }
 
-  //hashed password
+  // Hashed password
   const hashedPassword = bcrypt.hashSync(password, 10);
 
-  // Create new user
-  const newUser = new User({
+  // Prepare new user data
+  const newUserData = {
     firstname,
     middlename,
     lastname,
@@ -69,7 +70,15 @@ export const createuser = async (req, res) => {
     email: normalizedEmail,
     password: hashedPassword,
     department,
-  });
+  };
+
+  // Only superAdmin can assign roles
+  if (req.user.role === "superAdmin" && role) {
+    newUserData.role = role;
+  }
+
+  // Create new user
+  const newUser = new User(newUserData);
 
   try {
     await newUser.save();

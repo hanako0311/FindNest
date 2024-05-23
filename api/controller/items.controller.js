@@ -3,14 +3,9 @@ import { errorHandler } from "../utils/error.js";
 import validator from "validator"; // npm install validator
 
 export const createItem = async (req, res, next) => {
-  console.log("Received headers:", req.headers);
-  console.log("Received request body:", req.body);
-
-  // Destructure required fields from req.body
   const { item, dateFound, location, description, imageUrls, category } =
     req.body;
 
-  // Validate required fields are present and imageUrls is not empty
   if (
     !item ||
     !dateFound ||
@@ -20,7 +15,6 @@ export const createItem = async (req, res, next) => {
     !imageUrls ||
     imageUrls.length === 0
   ) {
-    console.log("Validation failed: Required fields are missing or incomplete");
     return next(
       errorHandler(
         400,
@@ -29,13 +23,10 @@ export const createItem = async (req, res, next) => {
     );
   }
 
-  // Validate URL format for each image URL
   if (!imageUrls.every((url) => validator.isURL(url))) {
-    console.log("Validation failed: One or more image URLs are invalid");
     return next(errorHandler(400, "Please provide valid URLs for all images"));
   }
 
-  // Create new item object with imageUrls and userRef from authenticated user
   const newItem = new Item({
     item,
     dateFound,
@@ -43,15 +34,13 @@ export const createItem = async (req, res, next) => {
     description,
     imageUrls,
     category,
-    userRef: req.user.id, // Assuming req.user is set by authentication middleware
+    userRef: req.user.id,
   });
 
   try {
-    // Save the new item to the database
     const savedItem = await newItem.save();
     res.status(201).json(savedItem);
   } catch (error) {
-    console.error("Error saving item:", error);
     next(error);
   }
 };
@@ -59,7 +48,7 @@ export const createItem = async (req, res, next) => {
 export const getItems = async (req, res, next) => {
   try {
     const startIndex = parseInt(req.query.startIndex) || 0;
-    const limit = parseInt(req.query.limit) || 12;
+    const limit = parseInt(req.query.limit) || 99;
     const sortDirection = req.query.order === "asc" ? 1 : -1;
 
     // Constructing the query object
@@ -95,19 +84,42 @@ export const getItemDetails = async (req, res) => {
   }
 };
 
-export const claimItem = async (req, res) => {
-  const { itemId } = req.params; // Ensure this matches with your route parameter
-  const { name, date } = req.body; // Data sent from the frontend
+export const updateItem = async (req, res, next) => {
+  const { itemId } = req.params;
+  const { item, dateFound, location, description, imageUrls, category } =
+    req.body;
+
+  if (
+    !item ||
+    !dateFound ||
+    !location ||
+    !description ||
+    !category ||
+    !imageUrls ||
+    imageUrls.length === 0
+  ) {
+    return next(
+      errorHandler(
+        400,
+        "Please fill in all required fields, including image URLs"
+      )
+    );
+  }
+
+  if (!imageUrls.every((url) => validator.isURL(url))) {
+    return next(errorHandler(400, "Please provide valid URLs for all images"));
+  }
+
+  const allowedRoles = ["superAdmin", "admin", "staff"];
+  if (!allowedRoles.includes(req.user.role)) {
+    return next(errorHandler(403, "You are not allowed to update this item"));
+  }
 
   try {
     const updatedItem = await Item.findByIdAndUpdate(
       itemId,
-      {
-        status: "claimed",
-        claimantName: name,
-        claimedDate: date,
-      },
-      { new: true, runValidators: true } // Return the updated object and run validators
+      { item, dateFound, location, description, imageUrls, category },
+      { new: true, runValidators: true }
     );
 
     if (!updatedItem) {
@@ -115,7 +127,49 @@ export const claimItem = async (req, res) => {
     }
     res.json(updatedItem);
   } catch (error) {
-    console.error("Error updating item claim:", error);
+    console.error("Error updating item:", error);
+    next(error);
+  }
+};
+
+export const deleteItem = async (req, res, next) => {
+  const { itemId } = req.params;
+
+  const allowedRoles = ["superAdmin", "admin", "staff"];
+  if (!allowedRoles.includes(req.user.role)) {
+    return next(errorHandler(403, "You are not allowed to delete this item"));
+  }
+
+  try {
+    const item = await Item.findByIdAndDelete(itemId);
+
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    res.status(200).json({ message: "Item has been deleted" });
+  } catch (error) {
+    console.error("Error deleting item:", error);
+    next(error);
+  }
+};
+
+export const claimItem = async (req, res) => {
+  const { itemId } = req.params;
+  const { name, date } = req.body;
+
+  try {
+    const updatedItem = await Item.findByIdAndUpdate(
+      itemId,
+      { status: "claimed", claimantName: name, claimedDate: date },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.json(updatedItem);
+  } catch (error) {
     res
       .status(500)
       .json({ message: "Failed to claim item", error: error.toString() });
@@ -123,16 +177,37 @@ export const claimItem = async (req, res) => {
 };
 
 export const getTotalItems = async (req, res) => {
+  console.log("getTotalItems function called");
   try {
+    // const startIndex = parseInt(req.query.startIndex) || 0;
+    // const limit = parseInt(req.query.limit) || 9;
+    // const sortDirection = req.query.order === "asc" ? 1 : -1;
+
+    // // Constructing the query object
+    // let query = {};
+    // if (req.query.item) query.item = req.query.item;
+    // if (req.query.category) query.category = req.query.category;
+    // if (req.query.searchTerm) {
+    //   query.$or = [
+    //     { item: { $regex: req.query.searchTerm, $options: "i" } },
+    //     { description: { $regex: req.query.searchTerm, $options: "i" } },
+    //   ];
+    // }
+
+    // const items = await Item.find(query)
+    //   .skip(startIndex)
+    //   .limit(limit)
+    //   .sort({ createdAt: sortDirection });
+
     const totalItems = await Item.countDocuments();
-    // Example of additional metrics
     const itemsClaimed = await Item.countDocuments({ status: "claimed" });
     const itemsPending = await Item.countDocuments({ status: "available" });
 
     res.json({
-      totalItemsReported: totalItems,
-      itemsClaimed: itemsClaimed,
-      itemsPending: itemsPending,
+      // items,
+      totalItems,
+      itemsClaimed,
+      itemsPending,
     });
   } catch (error) {
     console.error("Failed to fetch item counts:", error);

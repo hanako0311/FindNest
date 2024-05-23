@@ -18,13 +18,8 @@ const router = express.Router();
 router.get("/test", test);
 router.put("/update-user/:userId", verifyToken, updateUser);
 router.delete("/delete-user/:userId", verifyToken, deleteUser);
-router.put(
-  "/change-password/:userId",
-  verifyToken,
-  verifyAdmin,
-  changePassword
-);
+router.put("/change-password/:userId", verifyToken, changePassword);
 router.post("/signout", signout);
-router.get("/getusers", verifyToken, verifyToken, getUsers);
+router.get("/getusers", verifyToken, verifyAdmin, getUsers);
 
 export default router;

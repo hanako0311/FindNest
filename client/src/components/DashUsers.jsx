@@ -1,6 +1,6 @@
-import { Modal, Table, Button } from "flowbite-react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { Modal, Table, Button, TextInput, Select, Toast } from "flowbite-react";
 import {
   HiOutlineExclamationCircle,
   HiSearch,
@@ -9,7 +9,12 @@ import {
   HiDownload,
   HiPlus,
   HiPencilAlt,
+  HiCheckCircle,
+  HiXCircle,
 } from "react-icons/hi";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+
+const departments = ["SSG", "SSO", "SSD"];
 
 export default function DashUsers() {
   const { currentUser } = useSelector((state) => state.user);
@@ -27,8 +32,15 @@ export default function DashUsers() {
     email: "",
     department: "",
     role: "staff",
-    profilePicture: "",
+    password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [addErrorMessage, setAddErrorMessage] = useState("");
+  const [addSuccessMessage, setAddSuccessMessage] = useState("");
+  const [editErrorMessage, setEditErrorMessage] = useState("");
+  const [editSuccessMessage, setEditSuccessMessage] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -68,29 +80,43 @@ export default function DashUsers() {
 
   const handleDeleteUser = async () => {
     try {
-      const res = await fetch(`/api/user/delete/${userIdToDelete}`, {
+      const res = await fetch(`/api/user/delete-user/${userIdToDelete}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (res.ok) {
         setUsers((prev) => prev.filter((user) => user._id !== userIdToDelete));
         setShowModal(false);
+        setSuccessMessage("User deleted successfully.");
+        setTimeout(() => setSuccessMessage(""), 3000);
       } else {
         console.log(data.message);
+        setErrorMessage(data.message);
+        setTimeout(() => setErrorMessage(""), 3000);
       }
     } catch (error) {
       console.log(error.message);
+      setErrorMessage("Error deleting user.");
+      setTimeout(() => setErrorMessage(""), 3000);
     }
   };
 
-  const handleEditUser = (user) => {
-    setUserToEdit(user);
-    setShowEditModal(true);
-  };
-
   const handleSaveEditUser = async () => {
+    if (currentUser.role !== "superAdmin" && userToEdit.role === "superAdmin") {
+      setEditErrorMessage("Only superAdmins can assign the superAdmin role.");
+      return;
+    }
+
+    if (
+      currentUser.role === "admin" &&
+      (userToEdit.role === "superAdmin" || userToEdit.role === "admin")
+    ) {
+      setEditErrorMessage("Admins cannot assign admin or superAdmin roles.");
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/user/update/${userToEdit._id}`, {
+      const res = await fetch(`/api/user/update-user/${userToEdit._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -100,20 +126,42 @@ export default function DashUsers() {
       const data = await res.json();
       if (res.ok) {
         setUsers((prev) =>
-          prev.map((user) => (user._id === userToEdit._id ? data.user : user))
+          prev.map((user) => (user._id === userToEdit._id ? data : user))
         );
         setShowEditModal(false);
+        setEditSuccessMessage("User updated successfully.");
+        setTimeout(() => {
+          setEditSuccessMessage("");
+          setShowEditModal(false); // Close modal after success message disappears
+        }, 3000);
       } else {
         console.log(data.message);
+        setEditErrorMessage(data.message);
+        setTimeout(() => setEditErrorMessage(""), 3000);
       }
     } catch (error) {
       console.log(error.message);
+      setEditErrorMessage("Error updating user.");
+      setTimeout(() => setEditErrorMessage(""), 3000);
     }
   };
 
   const handleAddUser = async () => {
+    if (currentUser.role !== "superAdmin" && userToEdit.role === "superAdmin") {
+      setAddErrorMessage("Only superAdmins can assign the superAdmin role.");
+      return;
+    }
+
+    if (
+      currentUser.role === "admin" &&
+      (userToEdit.role === "superAdmin" || userToEdit.role === "admin")
+    ) {
+      setAddErrorMessage("Admins cannot assign admin or superAdmin roles.");
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/user/create`, {
+      const res = await fetch(`/api/auth/createuser`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -122,18 +170,72 @@ export default function DashUsers() {
       });
       const data = await res.json();
       if (res.ok) {
-        setUsers((prev) => [...prev, data.user]);
-        setShowAddModal(false);
+        setUsers((prev) => [...prev, data]);
+        setAddSuccessMessage("User added successfully.");
+        setTimeout(() => {
+          setAddSuccessMessage("");
+          setShowAddModal(false); // Close modal after success message disappears
+        }, 3000);
       } else {
         console.log(data.message);
+        setAddErrorMessage(data.message);
+        setTimeout(() => setAddErrorMessage(""), 3000);
       }
     } catch (error) {
       console.log(error.message);
+      setAddErrorMessage("Error adding user.");
+      setTimeout(() => setAddErrorMessage(""), 3000);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const handleChange = (e) => {
+    setUserToEdit({ ...userToEdit, [e.target.id]: e.target.value });
+  };
+
+  const handleEditUser = (user) => {
+    setUserToEdit(user);
+    setShowEditModal(true);
+  };
+
+  const handleAddUserModal = () => {
+    setUserToEdit({
+      firstname: "",
+      middlename: "",
+      lastname: "",
+      username: "",
+      email: "",
+      department: "",
+      role: "staff",
+      password: "",
+    });
+    setShowAddModal(true);
   };
 
   return (
     <div className="container mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
+      {successMessage && (
+        <Toast className="fixed top-4 right-4 z-50">
+          <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-500 dark:bg-green-800 dark:text-green-200">
+            <HiCheckCircle className="h-5 w-5" />
+          </div>
+          <div className="ml-3 text-sm font-normal">{successMessage}</div>
+          <Toast.Toggle />
+        </Toast>
+      )}
+      {errorMessage && (
+        <Toast className="fixed top-4 right-4 z-50">
+          <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-500 dark:bg-red-800 dark:text-red-200">
+            <HiXCircle className="h-5 w-5" />
+          </div>
+          <div className="ml-3 text-sm font-normal">{errorMessage}</div>
+          <Toast.Toggle />
+        </Toast>
+      )}
+
       <div className="p-3 w-full overflow-x-auto flex-1">
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">
           All Users
@@ -142,17 +244,17 @@ export default function DashUsers() {
       <div className="sm:flex mb-4">
         <div className="items-center hidden mb-3 sm:flex sm:divide-x sm:divide-gray-100 sm:mb-0 dark:divide-gray-700">
           <form className="lg:pr-3" action="#" method="GET">
-            <label htmlFor="users-search" className="sr-only">
+            <label htmlFor="items-search" className="sr-only">
               Search
             </label>
             <div className="relative mt-1 lg:w-64 xl:w-96">
               <HiSearch className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                name="email"
-                id="users-search"
+                name="search"
+                id="items-search"
                 className="pl-10 bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                placeholder="Search for users"
+                placeholder="Search for Users"
               />
             </div>
           </form>
@@ -163,7 +265,7 @@ export default function DashUsers() {
           </div>
         </div>
         <div className="flex items-center ml-auto space-x-2 sm:space-x-3">
-          <Button onClick={() => setShowAddModal(true)} color="blue">
+          <Button onClick={handleAddUserModal} color="blue">
             <HiPlus className="w-5 h-5 mr-2 -ml-1" />
             Add user
           </Button>
@@ -289,20 +391,12 @@ export default function DashUsers() {
                 >
                   First Name
                 </label>
-                <input
-                  type="text"
-                  name="firstname"
-                  value={userToEdit.firstname}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      firstname: e.target.value,
-                    })
-                  }
+                <TextInput
                   id="firstname"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  type="text"
                   placeholder="First Name"
-                  required
+                  value={userToEdit.firstname}
+                  onChange={handleChange}
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">
@@ -312,19 +406,12 @@ export default function DashUsers() {
                 >
                   Middle Name
                 </label>
-                <input
-                  type="text"
-                  name="middlename"
-                  value={userToEdit.middlename}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      middlename: e.target.value,
-                    })
-                  }
+                <TextInput
                   id="middlename"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  type="text"
                   placeholder="Middle Name"
+                  value={userToEdit.middlename}
+                  onChange={handleChange}
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">
@@ -334,20 +421,12 @@ export default function DashUsers() {
                 >
                   Last Name
                 </label>
-                <input
-                  type="text"
-                  name="lastname"
-                  value={userToEdit.lastname}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      lastname: e.target.value,
-                    })
-                  }
+                <TextInput
                   id="lastname"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  type="text"
                   placeholder="Last Name"
-                  required
+                  value={userToEdit.lastname}
+                  onChange={handleChange}
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">
@@ -357,20 +436,12 @@ export default function DashUsers() {
                 >
                   Username
                 </label>
-                <input
-                  type="text"
-                  name="username"
-                  value={userToEdit.username}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      username: e.target.value,
-                    })
-                  }
+                <TextInput
                   id="username"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  type="text"
                   placeholder="Username"
-                  required
+                  value={userToEdit.username}
+                  onChange={handleChange}
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">
@@ -380,20 +451,12 @@ export default function DashUsers() {
                 >
                   Email
                 </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={userToEdit.email}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      email: e.target.value,
-                    })
-                  }
+                <TextInput
                   id="email"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  type="text"
                   placeholder="Email"
-                  required
+                  value={userToEdit.email}
+                  onChange={handleChange}
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">
@@ -403,66 +466,70 @@ export default function DashUsers() {
                 >
                   Department
                 </label>
-                <input
-                  type="text"
-                  name="department"
+                <Select
+                  id="department"
                   value={userToEdit.department}
                   onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      department: e.target.value,
-                    })
+                    setUserToEdit({ ...userToEdit, department: e.target.value })
                   }
-                  id="department"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Department"
-                  required
-                />
+                >
+                  {departments.map((department) => (
+                    <option key={department} value={department}>
+                      {department}
+                    </option>
+                  ))}
+                </Select>
               </div>
               <div className="col-span-6 sm:col-span-3">
                 <label
-                  htmlFor="role"
+                  htmlFor="password"
                   className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                 >
-                  Role
+                  Password
                 </label>
-                <select
-                  name="role"
-                  value={userToEdit.role}
-                  onChange={(e) =>
-                    setUserToEdit({ ...userToEdit, role: e.target.value })
-                  }
-                  id="role"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                >
-                  <option value="superAdmin">Super Admin</option>
-                  <option value="admin">Admin</option>
-                  <option value="staff">Staff</option>
-                </select>
+                <div className="relative">
+                  <TextInput
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    value={userToEdit.password}
+                    onChange={handleChange}
+                  />
+                  <div className="absolute inset-y-0 right-3 flex items-center text-sm leading-5">
+                    <button type="button" onClick={togglePasswordVisibility}>
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="col-span-6">
-                <label
-                  htmlFor="profilePicture"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Profile Picture URL
-                </label>
-                <input
-                  type="text"
-                  name="profilePicture"
-                  value={userToEdit.profilePicture}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      profilePicture: e.target.value,
-                    })
-                  }
-                  id="profilePicture"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Profile Picture URL"
-                />
-              </div>
+              {currentUser.role === "superAdmin" && (
+                <div className="col-span-6 sm:col-span-3">
+                  <label
+                    htmlFor="role"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Role
+                  </label>
+                  <Select
+                    id="role"
+                    value={userToEdit.role}
+                    onChange={(e) =>
+                      setUserToEdit({ ...userToEdit, role: e.target.value })
+                    }
+                  >
+                    <option value="superAdmin">Super Admin</option>
+                    <option value="admin">Admin</option>
+                    <option value="staff">Staff</option>
+                  </Select>
+                </div>
+              )}
             </div>
+            {addErrorMessage && (
+              <div className="mb-4 text-red-500">{addErrorMessage}</div>
+            )}
+            {addSuccessMessage && (
+              <div className="mb-4 text-green-500">{addSuccessMessage}</div>
+            )}
             <div className="items-center p-6 border-t border-gray-200 rounded-b dark:border-gray-700">
               <Button
                 type="submit"
@@ -498,20 +565,12 @@ export default function DashUsers() {
                 >
                   First Name
                 </label>
-                <input
-                  type="text"
-                  name="firstname"
-                  value={userToEdit.firstname}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      firstname: e.target.value,
-                    })
-                  }
+                <TextInput
                   id="firstname"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  type="text"
                   placeholder="First Name"
-                  required
+                  value={userToEdit.firstname}
+                  onChange={handleChange}
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">
@@ -521,19 +580,12 @@ export default function DashUsers() {
                 >
                   Middle Name
                 </label>
-                <input
-                  type="text"
-                  name="middlename"
-                  value={userToEdit.middlename}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      middlename: e.target.value,
-                    })
-                  }
+                <TextInput
                   id="middlename"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  type="text"
                   placeholder="Middle Name"
+                  value={userToEdit.middlename}
+                  onChange={handleChange}
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">
@@ -543,20 +595,12 @@ export default function DashUsers() {
                 >
                   Last Name
                 </label>
-                <input
-                  type="text"
-                  name="lastname"
-                  value={userToEdit.lastname}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      lastname: e.target.value,
-                    })
-                  }
+                <TextInput
                   id="lastname"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  type="text"
                   placeholder="Last Name"
-                  required
+                  value={userToEdit.lastname}
+                  onChange={handleChange}
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">
@@ -566,20 +610,12 @@ export default function DashUsers() {
                 >
                   Username
                 </label>
-                <input
-                  type="text"
-                  name="username"
-                  value={userToEdit.username}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      username: e.target.value,
-                    })
-                  }
+                <TextInput
                   id="username"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  type="text"
                   placeholder="Username"
-                  required
+                  value={userToEdit.username}
+                  onChange={handleChange}
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">
@@ -589,20 +625,12 @@ export default function DashUsers() {
                 >
                   Email
                 </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={userToEdit.email}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      email: e.target.value,
-                    })
-                  }
+                <TextInput
                   id="email"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  type="text"
                   placeholder="Email"
-                  required
+                  value={userToEdit.email}
+                  onChange={handleChange}
                 />
               </div>
               <div className="col-span-6 sm:col-span-3">
@@ -612,66 +640,70 @@ export default function DashUsers() {
                 >
                   Department
                 </label>
-                <input
-                  type="text"
-                  name="department"
+                <Select
+                  id="department"
                   value={userToEdit.department}
                   onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      department: e.target.value,
-                    })
+                    setUserToEdit({ ...userToEdit, department: e.target.value })
                   }
-                  id="department"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Department"
-                  required
-                />
+                >
+                  {departments.map((department) => (
+                    <option key={department} value={department}>
+                      {department}
+                    </option>
+                  ))}
+                </Select>
               </div>
               <div className="col-span-6 sm:col-span-3">
                 <label
-                  htmlFor="role"
+                  htmlFor="password"
                   className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                 >
-                  Role
+                  Password
                 </label>
-                <select
-                  name="role"
-                  value={userToEdit.role}
-                  onChange={(e) =>
-                    setUserToEdit({ ...userToEdit, role: e.target.value })
-                  }
-                  id="role"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                >
-                  <option value="superAdmin">Super Admin</option>
-                  <option value="admin">Admin</option>
-                  <option value="staff">Staff</option>
-                </select>
+                <div className="relative">
+                  <TextInput
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Password"
+                    value={userToEdit.password}
+                    onChange={handleChange}
+                  />
+                  <div className="absolute inset-y-0 right-3 flex items-center text-sm leading-5">
+                    <button type="button" onClick={togglePasswordVisibility}>
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="col-span-6">
-                <label
-                  htmlFor="profilePicture"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Profile Picture URL
-                </label>
-                <input
-                  type="text"
-                  name="profilePicture"
-                  value={userToEdit.profilePicture}
-                  onChange={(e) =>
-                    setUserToEdit({
-                      ...userToEdit,
-                      profilePicture: e.target.value,
-                    })
-                  }
-                  id="profilePicture"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Profile Picture URL"
-                />
-              </div>
+              {currentUser.role === "superAdmin" && (
+                <div className="col-span-6 sm:col-span-3">
+                  <label
+                    htmlFor="role"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Role
+                  </label>
+                  <Select
+                    id="role"
+                    value={userToEdit.role}
+                    onChange={(e) =>
+                      setUserToEdit({ ...userToEdit, role: e.target.value })
+                    }
+                  >
+                    <option value="superAdmin">Super Admin</option>
+                    <option value="admin">Admin</option>
+                    <option value="staff">Staff</option>
+                  </Select>
+                </div>
+              )}
             </div>
+            {editErrorMessage && (
+              <div className="mb-4 text-red-500">{editErrorMessage}</div>
+            )}
+            {editSuccessMessage && (
+              <div className="mb-4 text-green-500">{editSuccessMessage}</div>
+            )}
             <div className="items-center p-6 border-t border-gray-200 rounded-b dark:border-gray-700">
               <Button
                 type="submit"
