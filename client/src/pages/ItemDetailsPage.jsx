@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaStar, FaStarHalf } from "react-icons/fa";
+import { FaArrowLeft, FaStar, FaStarHalf } from "react-icons/fa";
 import { Button, Card } from "flowbite-react";
 import { throttle } from "lodash";
 
@@ -41,6 +41,15 @@ function ItemDetail() {
 
   return (
     <Card>
+      <div className="flex justify-between items-center p-4">
+        <button
+          className="text-blue-500 hover:text-blue-700"
+          onClick={() => navigate("/dashboard?tab=found-items")}
+        >
+          <FaArrowLeft className="inline-block mr-2" />
+          Back to Found Items
+        </button>
+      </div>
       <div className="flex flex-col lg:flex-row gap-4 p-4">
         <div className="flex-1">
           <div className="relative">
