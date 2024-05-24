@@ -221,36 +221,11 @@ export default function DashCrudItems() {
           <Toast.Toggle />
         </Toast>
       )}
-
-      <div className="p-3 w-full overflow-x-auto flex-1">
+      <div className="p-3 w-full overflow-x-auto flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">
           All Items
         </h1>
-      </div>
-      <div className="sm:flex mb-4">
-        <div className="items-center hidden mb-3 sm:flex sm:divide-x sm:divide-gray-100 sm:mb-0 dark:divide-gray-700">
-          <form className="lg:pr-3" action="#" method="GET">
-            <label htmlFor="items-search" className="sr-only">
-              Search
-            </label>
-            <div className="relative mt-1 lg:w-64 xl:w-96">
-              <HiSearch className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                name="search"
-                id="items-search"
-                className="pl-10 bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                placeholder="Search for items"
-              />
-            </div>
-          </form>
-          <div className="flex pl-0 mt-3 space-x-1 sm:pl-2 sm:mt-0">
-            <button className="inline-flex justify-center p-1 text-gray-500 rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
-              <HiDotsVertical className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center ml-auto space-x-2 sm:space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3">
           <Button onClick={handleAddItem} color="blue">
             <HiPlus className="w-5 h-5 mr-2 -ml-1" />
             Add Item
