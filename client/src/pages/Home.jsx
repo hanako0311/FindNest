@@ -12,9 +12,9 @@ const HomePage = () => {
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
             Your reliable tool for managing lost and found items with ease.
           </p>
-          <Link to="/get-started" className="inline-block">
+          <Link to="/report-form" className="inline-block">
             <button className="bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-700 transition duration-300">
-              Get Started
+              Report Here
             </button>
           </Link>
         </div>
