@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
-import { Button, Card } from "flowbite-react";
+import { Button } from "flowbite-react";
 import { format } from "date-fns";
 
 function ItemDetail() {
@@ -17,6 +17,7 @@ function ItemDetail() {
     status: "",
     claimantName: "",
     dateFound: "",
+    department: "", // Add department field
   });
   const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -109,6 +110,10 @@ function ItemDetail() {
               <span className="ml-2">{item.claimantName}</span>
             </p>
           )}
+          <p className="text-xl mb-6">
+            <span className="font-medium">Stored Location:</span>
+            <span className="ml-2">{item.department}</span> {/* Display the stored location */}
+          </p>
           <p className="text-xl text-gray-700 dark:text-gray-300 mb-6">
             <span className="font-medium">Description:</span>
           </p>
