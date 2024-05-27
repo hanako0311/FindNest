@@ -174,11 +174,19 @@ export const getUsers = async (req, res, next) => {
     return next(errorHandler(403, "You are not allowed to view users"));
   }
   try {
+    const { excludeUserId } = req.query; // Get the excludeUserId parameter
     const startIndex = parseInt(req.query.startIndex) || 0;
     const limit = parseInt(req.query.limit) || 10;
     const sortDirection = req.query.sort === "asc" ? 1 : -1;
 
-    const users = await User.find()
+    let query = excludeUserId ? { _id: { $ne: excludeUserId } } : {};
+
+    // Add role-based filtering for admins
+    if (req.user.role === "admin") {
+      query = { ...query, role: "staff" };
+    }
+
+    const users = await User.find(query)
       .sort({ createdAt: sortDirection })
       .skip(startIndex)
       .limit(limit);
@@ -188,7 +196,7 @@ export const getUsers = async (req, res, next) => {
       return rest;
     });
 
-    const totalUsers = await User.countDocuments();
+    const totalUsers = await User.countDocuments(query);
 
     const now = new Date();
     const oneMonthAgo = new Date(
