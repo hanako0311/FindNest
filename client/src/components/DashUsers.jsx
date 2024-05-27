@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Modal, Table, Button, TextInput, Select, Toast } from "flowbite-react";
+import { Modal, Table, Button, TextInput, Toast } from "flowbite-react";
 import {
   HiOutlineExclamationCircle,
   HiSearch,
@@ -466,19 +466,22 @@ export default function DashUsers() {
                 >
                   Department
                 </label>
-                <Select
-                  id="department"
-                  value={userToEdit.department}
-                  onChange={(e) =>
-                    setUserToEdit({ ...userToEdit, department: e.target.value })
-                  }
-                >
-                  {departments.map((department) => (
-                    <option key={department} value={department}>
-                      {department}
-                    </option>
+                <div className="flex space-x-4">
+                  {departments.map((dept) => (
+                    <label key={dept} className="flex items-center">
+                      <input
+                        type="radio"
+                        id="department"
+                        name="department"
+                        value={dept}
+                        checked={userToEdit.department === dept}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">{dept}</span>
+                    </label>
                   ))}
-                </Select>
+                </div>
               </div>
               <div className="col-span-6 sm:col-span-3">
                 <label
@@ -510,17 +513,44 @@ export default function DashUsers() {
                   >
                     Role
                   </label>
-                  <Select
-                    id="role"
-                    value={userToEdit.role}
-                    onChange={(e) =>
-                      setUserToEdit({ ...userToEdit, role: e.target.value })
-                    }
-                  >
-                    <option value="superAdmin">Super Admin</option>
-                    <option value="admin">Admin</option>
-                    <option value="staff">Staff</option>
-                  </Select>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        id="role"
+                        name="role"
+                        value="superAdmin"
+                        checked={userToEdit.role === "superAdmin"}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">Super Admin</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        id="role"
+                        name="role"
+                        value="admin"
+                        checked={userToEdit.role === "admin"}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">Admin</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        id="role"
+                        name="role"
+                        value="staff"
+                        checked={userToEdit.role === "staff"}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">Staff</span>
+                    </label>
+                  </div>
                 </div>
               )}
             </div>
@@ -640,19 +670,22 @@ export default function DashUsers() {
                 >
                   Department
                 </label>
-                <Select
-                  id="department"
-                  value={userToEdit.department}
-                  onChange={(e) =>
-                    setUserToEdit({ ...userToEdit, department: e.target.value })
-                  }
-                >
-                  {departments.map((department) => (
-                    <option key={department} value={department}>
-                      {department}
-                    </option>
+                <div className="flex space-x-4">
+                  {departments.map((dept) => (
+                    <label key={dept} className="flex items-center">
+                      <input
+                        type="radio"
+                        id="department"
+                        name="department"
+                        value={dept}
+                        checked={userToEdit.department === dept}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">{dept}</span>
+                    </label>
                   ))}
-                </Select>
+                </div>
               </div>
               <div className="col-span-6 sm:col-span-3">
                 <label
@@ -684,17 +717,44 @@ export default function DashUsers() {
                   >
                     Role
                   </label>
-                  <Select
-                    id="role"
-                    value={userToEdit.role}
-                    onChange={(e) =>
-                      setUserToEdit({ ...userToEdit, role: e.target.value })
-                    }
-                  >
-                    <option value="superAdmin">Super Admin</option>
-                    <option value="admin">Admin</option>
-                    <option value="staff">Staff</option>
-                  </Select>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        id="role"
+                        name="role"
+                        value="superAdmin"
+                        checked={userToEdit.role === "superAdmin"}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">Super Admin</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        id="role"
+                        name="role"
+                        value="admin"
+                        checked={userToEdit.role === "admin"}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">Admin</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        id="role"
+                        name="role"
+                        value="staff"
+                        checked={userToEdit.role === "staff"}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">Staff</span>
+                    </label>
+                  </div>
                 </div>
               )}
             </div>
