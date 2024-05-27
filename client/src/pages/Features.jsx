@@ -118,27 +118,9 @@ export default function Features() {
         "Manage all reported items efficiently with our comprehensive tools. Our management system provides an easy-to-use interface for tracking and updating item statuses.",
     },
     {
-      Icon: FaUsers,
-      title: "User Collaboration",
-      description:
-        "Collaborate with your team in real-time with secure role-based access. Ensure smooth communication and coordination within your team to handle items effectively.",
-    },
-    {
-      Icon: FaSearch,
-      title: "Search Functionality",
-      description:
-        "Quickly find found items with our implemented search functionality",
-    },
-    {
       Icon: FaChartLine,
       title: "Analytics",
-      description: "Gain insights with our detailed analytics tools.",
-    },
-    {
-      Icon: FaShieldAlt,
-      title: "Security",
-      description:
-        "Keep your data safe with our advanced security features. We ensure your information is protected with state-of-the-art technology.",
+      description: "Gain insights with our detailed analytics tools, through the usage of trends, charts, and audit logs to keep track of the claiming and reporting process",
     },
   ];
 
