@@ -79,10 +79,6 @@ export default function DashAnalytics() {
       const foundCounts = Array(7).fill(0);
       const claimedCounts = Array(7).fill(0);
 
-      let totalItemsReported = 0;
-      let itemsClaimed = 0;
-      let itemsPending = 0;
-
       fetchedItems.forEach((item) => {
         const createdAt = new Date(item.createdAt);
         const daysAgoFound = Math.floor(
@@ -113,8 +109,6 @@ export default function DashAnalytics() {
           sortDate: new Date(item.createdAt),
         });
 
-        totalItemsReported++;
-        itemsPending++;
         if (item.status === "claimed" && item.claimedDate) {
           modifiedItems.push({
             ...item,
@@ -126,19 +120,30 @@ export default function DashAnalytics() {
             }),
             sortDate: new Date(item.claimedDate),
           });
-          itemsClaimed++;
-          itemsPending--;
         }
       });
 
-      setTotalItemsReported(totalItemsReported);
-      setItemsClaimed(itemsClaimed);
-      setItemsPending(itemsPending);
       setItems(modifiedItems.sort((a, b) => b.sortDate - a.sortDate));
       setItemsFoundCount(foundCounts.reverse());
       setItemsClaimedCount(claimedCounts.reverse());
+      setTotalItemsReported(fetchedItems.length);
+      setItemsClaimed(getCount(fetchedItems, "claimed"));
+      setItemsPending(getCount(fetchedItems, "available"));
+      setFilteredItems(modifiedItems);
     } catch (error) {
       console.error("Failed to fetch items:", error);
+    }
+  };
+
+  const getCount = (items, status) => items.filter((item) => item.status === status).length;
+
+  const handleCategoryChange = (event) => {
+    const category = event.target.value;
+    setSelectedCategory(category);
+    if (category === "") {
+      setFilteredItems(items);
+    } else {
+      setFilteredItems(items.filter((item) => item.category === category));
     }
   };
 
@@ -314,6 +319,16 @@ export default function DashAnalytics() {
         <h1 className="text-3xl font-bold text-gray-700 dark:text-gray-300 mb-4">
           Audit Logs
         </h1>
+        <div className="mb-4">
+          <select className="w-1/3 p-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300" id="category" value={selectedCategory} onChange={handleCategoryChange}>
+            <option value="">All Categories</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
         <Table
           hoverable
           className="min-w-full text-sm text-left text-gray-500 dark:text-gray-400"
@@ -329,7 +344,7 @@ export default function DashAnalytics() {
             <Table.HeadCell>Category</Table.HeadCell>
           </Table.Head>
           <Table.Body className="bg-white divide-y dark:divide-gray-700 dark:bg-gray-800">
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <Table.Row
                 key={item._id}
                 className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600"
