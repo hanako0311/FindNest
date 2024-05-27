@@ -24,40 +24,6 @@ ChartJS.register(
   LineElement
 );
 
-const categories = [
-  "Mobile Phones",
-  "Laptops/Tablets",
-  "Headphones/Earbuds",
-  "Chargers and Cables",
-  "Cameras",
-  "Electronic Accessories",
-  "Textbooks",
-  "Notebooks",
-  "Stationery Items",
-  "Art Supplies",
-  "Calculators",
-  "Coats and Jackets",
-  "Hats and Caps",
-  "Scarves and Gloves",
-  "Bags and Backpacks",
-  "Sunglasses",
-  "Jewelry and Watches",
-  "Umbrellas",
-  "Wallets and Purses",
-  "ID Cards and Passports",
-  "Keys",
-  "Personal Care Items",
-  "Sports Gear",
-  "Gym Equipment",
-  "Bicycles and Skateboards",
-  "Musical Instruments",
-  "Water Bottles",
-  "Lunch Boxes",
-  "Toys and Games",
-  "Decorative Items",
-  "Other",
-];
-
 export default function DashAnalytics() {
   const [totalItemsReported, setTotalItemsReported] = useState(0);
   const [itemsClaimed, setItemsClaimed] = useState(0);
@@ -66,8 +32,6 @@ export default function DashAnalytics() {
   const [itemsFoundCount, setItemsFoundCount] = useState(Array(7).fill(0));
   const [itemsClaimedCount, setItemsClaimedCount] = useState(Array(7).fill(0));
   const [items, setItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
 
   const fetchItems = async () => {
     try {
@@ -88,6 +52,7 @@ export default function DashAnalytics() {
           foundCounts[daysAgoFound]++;
         }
 
+        //checking if item is claimed
         if (item.status === "claimed" && item.claimedDate) {
           const claimedDate = new Date(item.claimedDate);
           const daysAgoClaimed = Math.floor(
@@ -98,6 +63,7 @@ export default function DashAnalytics() {
           }
         }
 
+        //push items 
         modifiedItems.push({
           ...item,
           action: "Found",
@@ -109,6 +75,7 @@ export default function DashAnalytics() {
           sortDate: new Date(item.createdAt),
         });
 
+        //if item is claimed make a new entry
         if (item.status === "claimed" && item.claimedDate) {
           modifiedItems.push({
             ...item,
@@ -129,62 +96,12 @@ export default function DashAnalytics() {
       setTotalItemsReported(fetchedItems.length);
       setItemsClaimed(getCount(fetchedItems, "claimed"));
       setItemsPending(getCount(fetchedItems, "available"));
-      setFilteredItems(modifiedItems);
     } catch (error) {
       console.error("Failed to fetch items:", error);
     }
   };
 
   const getCount = (items, status) => items.filter((item) => item.status === status).length;
-
-  const handleCategoryChange = (event) => {
-    const category = event.target.value;
-    setSelectedCategory(category);
-    if (category === "") {
-      setFilteredItems(items);
-    } else {
-      setFilteredItems(items.filter((item) => item.category === category));
-    }
-  };
-
-  useEffect(() => {
-    const foundCounts = Array(7).fill(0);
-    const claimedCounts = Array(7).fill(0);
-    const now = new Date();
-
-    items.forEach((item) => {
-      const createdAt = new Date(item.createdAt);
-      const daysAgoFound = Math.floor(
-        (now - createdAt) / (1000 * 60 * 60 * 24)
-      );
-      if (daysAgoFound < 7) {
-        foundCounts[daysAgoFound]++;
-      }
-
-      if (item.status === "claimed" && item.claimedDate) {
-        const claimedDate = new Date(item.claimedDate);
-        const daysAgoClaimed = Math.floor(
-          (now - claimedDate) / (1000 * 60 * 60 * 24)
-        );
-        if (daysAgoClaimed < 7) {
-          claimedCounts[daysAgoClaimed]++;
-        }
-      }
-    });
-
-    setItemsFoundCount(foundCounts.reverse());
-    setItemsClaimedCount(claimedCounts.reverse());
-  }, [items]);
-
-  useEffect(() => {
-    const filtered = items.filter((item) => {
-      const matchesCategory = selectedCategory
-        ? item.category === selectedCategory
-        : true;
-      return matchesCategory;
-    });
-    setFilteredItems(filtered);
-  }, [selectedCategory, items]);
 
   useEffect(() => {
     if (currentUser && currentUser._id) {
@@ -296,6 +213,7 @@ export default function DashAnalytics() {
         </div>
       </div>
       <div className="flex flex-wrap justify-around items-center mb-4">
+        {/* pie chart */}
         <div className="p-3 dark:bg-slate-800 gap-4 md:w-1/3 w-full rounded-md shadow-md text-white flex justify-center items-center">
           <div className="w-full md:w-72 p-5 flex justify-center items-center">
             <div style={{ width: "100%", height: "auto", minHeight: "230px" }}>
@@ -303,6 +221,7 @@ export default function DashAnalytics() {
             </div>
           </div>
         </div>
+        {/* line graph */}
         <div className="p-3 dark:bg-slate-800 gap-4 md:w-2/3 w-full rounded-md shadow-md text-white flex justify-center items-center">
           <div className="w-full p-2 flex justify-center items-center">
             <div
@@ -319,16 +238,6 @@ export default function DashAnalytics() {
         <h1 className="text-3xl font-bold text-gray-700 dark:text-gray-300 mb-4">
           Audit Logs
         </h1>
-        <div className="mb-4">
-          <select className="w-1/3 p-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300" id="category" value={selectedCategory} onChange={handleCategoryChange}>
-            <option value="">All Categories</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
         <Table
           hoverable
           className="min-w-full text-sm text-left text-gray-500 dark:text-gray-400"
@@ -344,7 +253,7 @@ export default function DashAnalytics() {
             <Table.HeadCell>Category</Table.HeadCell>
           </Table.Head>
           <Table.Body className="bg-white divide-y dark:divide-gray-700 dark:bg-gray-800">
-            {filteredItems.map((item) => (
+            {items.map((item) => (
               <Table.Row
                 key={item._id}
                 className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600"
