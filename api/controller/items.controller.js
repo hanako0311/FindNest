@@ -1,4 +1,5 @@
 import Item from "../models/items.model.js";
+import User from "../models/user.model.js"; // Import the User model
 import { errorHandler } from "../utils/error.js";
 import validator from "validator"; // npm install validator
 
@@ -27,17 +28,23 @@ export const createItem = async (req, res, next) => {
     return next(errorHandler(400, "Please provide valid URLs for all images"));
   }
 
-  const newItem = new Item({
-    item,
-    dateFound,
-    location,
-    description,
-    imageUrls,
-    category,
-    userRef: req.user.id,
-  });
-
   try {
+    const user = await User.findById(req.user.id); // Fetch the user's details
+    if (!user) {
+      return next(errorHandler(404, "User not found"));
+    }
+
+    const newItem = new Item({
+      item,
+      dateFound,
+      location,
+      description,
+      imageUrls,
+      category,
+      userRef: req.user.id,
+      department: user.department, // Include the department
+    });
+
     const savedItem = await newItem.save();
     res.status(201).json(savedItem);
   } catch (error) {
@@ -179,32 +186,11 @@ export const claimItem = async (req, res) => {
 export const getTotalItems = async (req, res) => {
   console.log("getTotalItems function called");
   try {
-    // const startIndex = parseInt(req.query.startIndex) || 0;
-    // const limit = parseInt(req.query.limit) || 9;
-    // const sortDirection = req.query.order === "asc" ? 1 : -1;
-
-    // // Constructing the query object
-    // let query = {};
-    // if (req.query.item) query.item = req.query.item;
-    // if (req.query.category) query.category = req.query.category;
-    // if (req.query.searchTerm) {
-    //   query.$or = [
-    //     { item: { $regex: req.query.searchTerm, $options: "i" } },
-    //     { description: { $regex: req.query.searchTerm, $options: "i" } },
-    //   ];
-    // }
-
-    // const items = await Item.find(query)
-    //   .skip(startIndex)
-    //   .limit(limit)
-    //   .sort({ createdAt: sortDirection });
-
     const totalItems = await Item.countDocuments();
     const itemsClaimed = await Item.countDocuments({ status: "claimed" });
     const itemsPending = await Item.countDocuments({ status: "available" });
 
     res.json({
-      // items,
       totalItems,
       itemsClaimed,
       itemsPending,

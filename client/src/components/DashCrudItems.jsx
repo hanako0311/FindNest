@@ -5,8 +5,6 @@ import { Table, Button, Modal, FileInput, Toast } from "flowbite-react";
 import { Link } from "react-router-dom";
 import {
   HiOutlineExclamationCircle,
-  HiSearch,
-  HiDotsVertical,
   HiDownload,
   HiPlus,
   HiPencilAlt,
@@ -23,6 +21,7 @@ import { app } from "../firebase";
 export default function DashCrudItems() {
   const { currentUser } = useSelector((state) => state.user);
   const [items, setItems] = useState([]);
+  const [claimedItems, setClaimedItems] = useState([]);
   const [showMore, setShowMore] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -50,7 +49,10 @@ export default function DashCrudItems() {
       try {
         const res = await fetch("/api/items/getItems");
         const data = await res.json();
-        setItems(data);
+        const availableItems = data.filter((item) => item.status === "available");
+        const claimedItems = data.filter((item) => item.status === "claimed");
+        setItems(availableItems);
+        setClaimedItems(claimedItems);
         if (data.length < 9) {
           setShowMore(false);
         }
@@ -79,6 +81,9 @@ export default function DashCrudItems() {
       const data = await res.json();
       if (res.ok) {
         setItems((prev) => prev.filter((item) => item._id !== itemIdToDelete));
+        setClaimedItems((prev) =>
+          prev.filter((item) => item._id !== itemIdToDelete)
+        );
         setShowModal(false);
         setSuccessMessage("Item deleted successfully.");
         setTimeout(() => setSuccessMessage(""), 3000);
@@ -114,11 +119,19 @@ export default function DashCrudItems() {
       );
       const data = await res.json();
       if (res.ok) {
-        setItems((prev) =>
-          itemToEdit._id
-            ? prev.map((item) => (item._id === itemToEdit._id ? data : item))
-            : [...prev, data]
-        );
+        if (itemToEdit.status === "claimed") {
+          setClaimedItems((prev) =>
+            itemToEdit._id
+              ? prev.map((item) => (item._id === itemToEdit._id ? data : item))
+              : [...prev, data]
+          );
+        } else {
+          setItems((prev) =>
+            itemToEdit._id
+              ? prev.map((item) => (item._id === itemToEdit._id ? data : item))
+              : [...prev, data]
+          );
+        }
         setShowAddModal(false);
         setShowEditModal(false);
         setSuccessMessage(
@@ -248,6 +261,7 @@ export default function DashCrudItems() {
             <Table.HeadCell>Location</Table.HeadCell>
             <Table.HeadCell>Category</Table.HeadCell>
             <Table.HeadCell>Date Found</Table.HeadCell>
+            <Table.HeadCell>Office Stored</Table.HeadCell>
             <Table.HeadCell>Status</Table.HeadCell>
             <Table.HeadCell>Actions</Table.HeadCell>
           </Table.Head>
@@ -283,6 +297,7 @@ export default function DashCrudItems() {
                 <Table.Cell className="px-6 py-4">
                   {new Date(item.dateFound).toLocaleDateString()}
                 </Table.Cell>
+                <Table.Cell className="px-6 py-4">{item.department}</Table.Cell>
                 <Table.Cell className="px-6 py-4">{item.status}</Table.Cell>
                 <Table.Cell className="px-6 py-4">
                   <div className="flex items-center ml-auto space-x-2 sm:space-x-3">
@@ -313,6 +328,77 @@ export default function DashCrudItems() {
           </button>
         )}
       </div>
+
+      {/* Add some space between the two tables */}
+      <div className="my-8"></div>
+
+      {/* Claimed Items Table */}
+      <div className="p-3 w-full overflow-x-auto flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">
+          Claimed Items
+        </h1>
+      </div>
+      <div className="overflow-x-auto">
+        <Table
+          hoverable
+          className="min-w-full text-sm text-left text-gray-500 dark:text-gray-400"
+        >
+          <Table.Head className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <Table.HeadCell>Item Name</Table.HeadCell>
+            <Table.HeadCell>Image</Table.HeadCell>
+            <Table.HeadCell>Description</Table.HeadCell>
+            <Table.HeadCell>Location</Table.HeadCell>
+            <Table.HeadCell>Category</Table.HeadCell>
+            <Table.HeadCell>Date Found</Table.HeadCell>
+            <Table.HeadCell>Office Stored</Table.HeadCell>
+            <Table.HeadCell>Status</Table.HeadCell>
+            <Table.HeadCell>Claimant</Table.HeadCell>
+            <Table.HeadCell>Claimed Date</Table.HeadCell>
+          </Table.Head>
+          <Table.Body className="bg-white divide-y dark:divide-gray-700 dark:bg-gray-800">
+            {claimedItems.map((item) => (
+              <Table.Row
+                key={item._id}
+                className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600"
+              >
+                <Table.Cell className="px-6 py-4">
+                  <Link to={`/item/${item._id}`} className="font-bold">
+                    {item.item}
+                  </Link>
+                </Table.Cell>
+                <Table.Cell className="px-6 py-4">
+                  {item.imageUrls && item.imageUrls[0] && (
+                    <img
+                      src={item.imageUrls[0]}
+                      alt={item.item}
+                      className="w-24 h-auto"
+                      onError={(e) => {
+                        e.target.onError = null; // Prevents looping
+                        e.target.src = "default-image.png"; // Specify your default image URL here
+                      }}
+                    />
+                  )}
+                </Table.Cell>
+                <Table.Cell className="px-6 py-4">
+                  {item.description}
+                </Table.Cell>
+                <Table.Cell className="px-6 py-4">{item.location}</Table.Cell>
+                <Table.Cell className="px-6 py-4">{item.category}</Table.Cell>
+                <Table.Cell className="px-6 py-4">
+                  {new Date(item.dateFound).toLocaleDateString()}
+                </Table.Cell>
+                <Table.Cell className="px-6 py-4">{item.department}</Table.Cell>
+                <Table.Cell className="px-6 py-4">{item.status}</Table.Cell>
+                <Table.Cell className="px-6 py-4">{item.claimantName}</Table.Cell>
+                <Table.Cell className="px-6 py-4">
+                  {new Date(item.claimedDate).toLocaleDateString()}
+                </Table.Cell>
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </Table>
+      </div>
+
       <Modal
         show={showModal}
         onClose={() => setShowModal(false)}

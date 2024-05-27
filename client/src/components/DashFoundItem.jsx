@@ -41,23 +41,21 @@ const categories = [
 export default function DashFoundItem() {
   const { currentUser } = useSelector((state) => state.user);
   const [items, setItems] = useState([]);
-  // const [showMore, setShowMore] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredItems, setFilteredItems] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(""); // State for selected category
+  const [selectedCategory, setSelectedCategory] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const res = await fetch(
-          `/api/items/getItems?userId=${currentUser._id}`
-        );
+        const res = await fetch(`/api/items/getItems?userId=${currentUser._id}`);
         const data = await res.json();
-        setItems(data);
-        setFilteredItems(data); // Initialize filteredItems with all items
-        console.log("Fetched items:", data);
+        const availableItems = data.filter(item => item.status !== "claimed"); // Filter out claimed items
+        setItems(availableItems);
+        setFilteredItems(availableItems);
+        console.log("Fetched items:", availableItems);
       } catch (error) {
         console.error("Error fetching items:", error);
       }
@@ -66,18 +64,6 @@ export default function DashFoundItem() {
     fetchItems();
   }, [currentUser._id]);
 
-  /*const handleShowMore = async () => {
-    const res = await fetch(
-      `/api/items/getItems?userId=${currentUser._id}&startIndex=${items.length}`
-    );
-    const data = await res.json();
-    if (data.length < 12) {
-      setShowMore(false);
-    }
-    setItems((prevItems) => [...prevItems, ...data]);
-  }; */
-
-  // Update filtered items based on search term and selected category
   useEffect(() => {
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
     const filtered = items.filter((item) => {
@@ -96,7 +82,6 @@ export default function DashFoundItem() {
     });
     console.log("Filtered items:", filtered);
     setFilteredItems(filtered);
-    // setShowMore(filtered.length >= 12);
   }, [searchTerm, selectedCategory, items]);
 
   useEffect(() => {
@@ -112,7 +97,7 @@ export default function DashFoundItem() {
     const urlParams = new URLSearchParams(location.search);
     urlParams.set("searchTerm", searchTerm);
     const searchQuery = urlParams.toString();
-    //  navigate(`/search?${searchQuery}`);
+    navigate(`/search?${searchQuery}`);
   };
 
   return (

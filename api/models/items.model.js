@@ -19,7 +19,7 @@ const itemSchema = new mongoose.Schema(
       required: true,
     },
     description: {
-      type: String, 
+      type: String,
       required: true,
     },
     imageUrls: {
@@ -77,6 +77,10 @@ const itemSchema = new mongoose.Schema(
     claimedDate: {
       // When was the item claimed
       type: Date,
+    },
+    department: {
+      type: String, // Add this new field for department
+      required: true,
     },
   },
   { timestamps: true }

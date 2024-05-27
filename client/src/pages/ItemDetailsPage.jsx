@@ -42,12 +42,13 @@ function ItemDetail() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto my-10 p-4 shadow-lg bg-white dark:bg-gray-800 rounded-lg">
-      <div className="flex flex-col lg:flex-row gap-6">
+    <div className="max-w-6xl mx-auto my-10 p-8 shadow-lg bg-white dark:bg-gray-800 rounded-lg">
+      <div className="flex flex-col lg:flex-row gap-8">
         <div className="flex-1 relative">
           <button
-            className="absolute top-2 left-2 flex items-center text-blue-500 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-500"
+            className="absolute top-4 left-4 flex items-center text-blue-500 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-500 transition-colors duration-300 ease-in-out p-3 rounded-lg bg-gray-200 dark:bg-gray-700"
             onClick={() => navigate("/dashboard?tab=found-items")}
+            style={{ marginBottom: '1rem' }} // Add margin-bottom to create space
           >
             <FaArrowLeft className="inline-block mr-2" />
             <span className="text-lg">Back to Found Items</span>
@@ -55,7 +56,7 @@ function ItemDetail() {
           <img
             src={item.imageUrls[activeImageIndex]}
             alt="Main Product"
-            className="w-full object-contain h-[30rem] rounded-lg"
+            className="w-full object-contain h-[40rem] rounded-lg"
           />
           <div className="flex overflow-auto gap-2 mt-2 justify-center">
             {item.imageUrls.map((url, index) => (
@@ -63,7 +64,7 @@ function ItemDetail() {
                 key={index}
                 src={url}
                 alt={`Thumbnail ${index}`}
-                className={`cursor-pointer w-20 h-20 object-cover rounded-lg ${
+                className={`cursor-pointer w-24 h-24 object-cover rounded-lg ${
                   index === activeImageIndex ? "ring-2 ring-blue-500" : ""
                 }`}
                 onClick={() => setActiveImageIndex(index)}
@@ -72,27 +73,27 @@ function ItemDetail() {
           </div>
         </div>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+          <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-gray-100">
             {item.item}
           </h1>
-          <p className="text-xl text-gray-700 dark:text-gray-300 mb-4">
+          <p className="text-2xl text-gray-700 dark:text-gray-300 mb-6">
             {item.brandName}
           </p>
-          <p className="text-lg mb-4">
+          <p className="text-xl mb-6">
             <span className="font-medium">Location Found:</span>
             <span className="ml-2">{item.location}</span>
           </p>
-          <p className="text-lg mb-4">
+          <p className="text-xl mb-6">
             <span className="font-medium">Date Found:</span>
             <span className="ml-2">
               {format(new Date(item.dateFound), "PPP")}
             </span>
           </p>
-          <p className="text-lg mb-4">
+          <p className="text-xl mb-6">
             <span className="font-medium">Category:</span>
             <span className="ml-2">{item.category}</span>
           </p>
-          <p className="text-lg mb-4">
+          <p className="text-xl mb-6">
             <span className="font-medium">Status:</span>
             <span
               className={`ml-2 font-semibold ${
@@ -103,24 +104,24 @@ function ItemDetail() {
             </span>
           </p>
           {item.status === "claimed" && (
-            <p className="text-lg mb-4">
+            <p className="text-xl mb-6">
               <span className="font-medium">Claimant Name:</span>
               <span className="ml-2">{item.claimantName}</span>
             </p>
           )}
-          <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
+          <p className="text-xl text-gray-700 dark:text-gray-300 mb-6">
             <span className="font-medium">Description:</span>
           </p>
           <p className="text-lg text-gray-600 dark:text-gray-400">
             {item.description}
           </p>
           {item.status === "claimed" ? (
-            <Button disabled className="mt-6">
+            <Button disabled className="mt-8 px-8 py-4 text-lg">
               Claimed by {item.claimantName}
             </Button>
           ) : (
             <Button
-              className="mt-6"
+              className="mt-8 px-8 py-4 text-lg"
               onClick={() => navigate(`/claim-form/${id}`)}
             >
               Claim
