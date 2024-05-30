@@ -1,17 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { HiCheckCircle, HiXCircle } from "react-icons/hi";
-import { Table, Button, Modal, FileInput, Toast } from "flowbite-react";
-import { Link } from "react-router-dom";
 import {
+  HiCheckCircle,
+  HiXCircle,
   HiOutlineExclamationCircle,
-  HiSearch,
-  HiDotsVertical,
-  HiDownload,
   HiPlus,
   HiPencilAlt,
   HiTrash,
 } from "react-icons/hi";
+import {
+  Table,
+  Button,
+  Modal,
+  FileInput,
+  Toast,
+  Select,
+  TextInput,
+} from "flowbite-react";
+import { Link } from "react-router-dom";
 import {
   getStorage,
   ref,
@@ -19,11 +25,49 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { app } from "../firebase";
+import { AiOutlineSearch } from "react-icons/ai";
+
+const categories = [
+  "Mobile Phones",
+  "Laptops/Tablets",
+  "Headphones/Earbuds",
+  "Chargers and Cables",
+  "Cameras",
+  "Electronic Accessories",
+  "Textbooks",
+  "Notebooks",
+  "Stationery Items",
+  "Art Supplies",
+  "Calculators",
+  "Coats and Jackets",
+  "Hats and Caps",
+  "Scarves and Gloves",
+  "Bags and Backpacks",
+  "Sunglasses",
+  "Jewelry and Watches",
+  "Umbrellas",
+  "Wallets and Purses",
+  "ID Cards and Passports",
+  "Keys",
+  "Personal Care Items",
+  "Sports Gear",
+  "Gym Equipment",
+  "Bicycles and Skateboards",
+  "Musical Instruments",
+  "Water Bottles",
+  "Lunch Boxes",
+  "Toys and Games",
+  "Decorative Items",
+  "Other",
+];
 
 export default function DashCrudItems() {
   const { currentUser } = useSelector((state) => state.user);
   const [items, setItems] = useState([]);
-  const [showMore, setShowMore] = useState(true);
+  const [claimedItems, setClaimedItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -44,32 +88,48 @@ export default function DashCrudItems() {
   const [imageUploadError, setImageUploadError] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [view, setView] = useState("All Items");
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
         const res = await fetch("/api/items/getItems");
         const data = await res.json();
-        setItems(data);
-        if (data.length < 9) {
-          setShowMore(false);
-        }
+        const availableItems = data.filter(
+          (item) => item.status === "available"
+        );
+        const claimedItems = data.filter((item) => item.status === "claimed");
+        setItems(availableItems);
+        setClaimedItems(claimedItems);
+        setFilteredItems(view === "All Items" ? availableItems : claimedItems);
       } catch (error) {
         console.error("Error fetching items:", error);
       }
     };
 
     fetchItems();
-  }, []);
+  }, [view]);
 
-  const handleShowMore = async () => {
-    const res = await fetch(`/api/items/getItems?startIndex=${items.length}`);
-    const data = await res.json();
-    if (data.length < 9) {
-      setShowMore(false);
-    }
-    setItems((prevItems) => [...prevItems, ...data]);
-  };
+  useEffect(() => {
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    const itemsToFilter = view === "All Items" ? items : claimedItems;
+    const filtered = itemsToFilter.filter((item) => {
+      const matchesSearchTerm =
+        item.item.toLowerCase().includes(lowerCaseSearchTerm) ||
+        item.category.toLowerCase().includes(lowerCaseSearchTerm) ||
+        item.location.toLowerCase().includes(lowerCaseSearchTerm) ||
+        item.description.toLowerCase().includes(lowerCaseSearchTerm) ||
+        item.department?.toLowerCase().includes(lowerCaseSearchTerm) ||
+        new Date(item.dateFound)
+          .toLocaleDateString()
+          .includes(lowerCaseSearchTerm);
+      const matchesCategory = selectedCategory
+        ? item.category.toLowerCase() === selectedCategory.toLowerCase()
+        : true;
+      return matchesSearchTerm && matchesCategory;
+    });
+    setFilteredItems(filtered);
+  }, [searchTerm, selectedCategory, items, claimedItems, view]);
 
   const handleDeleteItem = async () => {
     try {
@@ -79,6 +139,12 @@ export default function DashCrudItems() {
       const data = await res.json();
       if (res.ok) {
         setItems((prev) => prev.filter((item) => item._id !== itemIdToDelete));
+        setClaimedItems((prev) =>
+          prev.filter((item) => item._id !== itemIdToDelete)
+        );
+        setFilteredItems((prev) =>
+          prev.filter((item) => item._id !== itemIdToDelete)
+        );
         setShowModal(false);
         setSuccessMessage("Item deleted successfully.");
         setTimeout(() => setSuccessMessage(""), 3000);
@@ -92,12 +158,75 @@ export default function DashCrudItems() {
     }
   };
 
+  const handleImageSubmit = async () => {
+    if (files.length > 0 && files.length + itemToEdit.imageUrls.length <= 5) {
+      const promises = [];
+      for (let i = 0; i < files.length; i++) {
+        promises.push(storeImage(files[i]));
+      }
+
+      try {
+        const urls = await Promise.all(promises);
+        setItemToEdit((prev) => ({
+          ...prev,
+          imageUrls: prev.imageUrls.concat(urls),
+        }));
+        setImageUploadProgress(null); // Reset upload progress after success
+        setImageUploadError(false);
+      } catch (err) {
+        setImageUploadError(
+          "Image upload failed: Each image must be less than 2MB."
+        );
+        setImageUploadProgress(null); // Reset upload progress on error
+      }
+    } else {
+      setImageUploadError("You can only upload up to 5 images per item.");
+    }
+  };
+
+  const storeImage = async (file) => {
+    return new Promise((resolve, reject) => {
+      const storage = getStorage(app);
+      const fileName = new Date().getTime() + file.name;
+      const storageRef = ref(storage, fileName);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setImageUploadProgress(progress);
+          console.log(`Upload is ${progress}% done`);
+        },
+        (error) => {
+          console.error("Upload error:", error);
+          reject(error);
+        },
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref)
+            .then((downloadURL) => {
+              resolve(downloadURL);
+            })
+            .catch((error) => {
+              console.error("Failed to get download URL:", error);
+              reject(error);
+            });
+        }
+      );
+    });
+  };
+
+  const handleRemoveImage = (index) => {
+    setItemToEdit((prev) => ({
+      ...prev,
+      imageUrls: prev.imageUrls.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSaveItem = async (e) => {
     e.preventDefault();
-    if (files.length > 0) {
-      const imageUrls = await uploadImages(files);
-      setItemToEdit((prev) => ({ ...prev, imageUrls }));
-    }
+
+    const updatedItem = { ...itemToEdit };
 
     try {
       const res = await fetch(
@@ -106,23 +235,34 @@ export default function DashCrudItems() {
         }`,
         {
           method: itemToEdit._id ? "PUT" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(itemToEdit),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedItem),
         }
       );
       const data = await res.json();
       if (res.ok) {
-        setItems((prev) =>
-          itemToEdit._id
-            ? prev.map((item) => (item._id === itemToEdit._id ? data : item))
+        if (updatedItem.status === "claimed") {
+          setClaimedItems((prev) =>
+            updatedItem._id
+              ? prev.map((item) => (item._id === updatedItem._id ? data : item))
+              : [...prev, data]
+          );
+        } else {
+          setItems((prev) =>
+            updatedItem._id
+              ? prev.map((item) => (item._id === updatedItem._id ? data : item))
+              : [...prev, data]
+          );
+        }
+        setFilteredItems((prev) =>
+          updatedItem._id
+            ? prev.map((item) => (item._id === updatedItem._id ? data : item))
             : [...prev, data]
         );
         setShowAddModal(false);
         setShowEditModal(false);
         setSuccessMessage(
-          `Item ${itemToEdit._id ? "updated" : "added"} successfully.`
+          `Item ${updatedItem._id ? "updated" : "added"} successfully.`
         );
         setTimeout(() => setSuccessMessage(""), 3000);
       } else {
@@ -138,7 +278,7 @@ export default function DashCrudItems() {
   const handleEditItem = (item) => {
     setItemToEdit({
       ...item,
-      dateFound: new Date(item.dateFound).toISOString().split("T")[0], // Format date to yyyy-MM-dd
+      dateFound: new Date(item.dateFound).toISOString().split("T")[0],
     });
     setShowEditModal(true);
   };
@@ -157,47 +297,6 @@ export default function DashCrudItems() {
     });
     setFiles([]);
     setShowAddModal(true);
-  };
-
-  const uploadImages = async (files) => {
-    const promises = [];
-    for (let i = 0; i < files.length; i++) {
-      promises.push(storeImage(files[i]));
-    }
-    return Promise.all(promises);
-  };
-
-  const storeImage = async (file) => {
-    return new Promise((resolve, reject) => {
-      const storage = getStorage(app);
-      const fileName = new Date().getTime() + file.name;
-      const storageRef = ref(storage, fileName);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setImageUploadProgress(progress);
-        },
-        (error) => {
-          console.error("Upload error:", error);
-          setImageUploadError("Image upload failed.");
-          reject(error);
-        },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref)
-            .then((downloadURL) => {
-              resolve(downloadURL);
-            })
-            .catch((error) => {
-              console.error("Failed to get download URL:", error);
-              setImageUploadError("Failed to get download URL.");
-              reject(error);
-            });
-        }
-      );
-    });
   };
 
   return (
@@ -221,21 +320,39 @@ export default function DashCrudItems() {
           <Toast.Toggle />
         </Toast>
       )}
+
       <div className="p-3 w-full overflow-x-auto flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">
-          All Items
+          Items
         </h1>
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          <Button onClick={handleAddItem} color="blue">
-            <HiPlus className="w-5 h-5 mr-2 -ml-1" />
-            Add Item
-          </Button>
-          <Button color="gray">
-            <HiDownload className="w-5 h-5 mr-2 -ml-1" />
-            Export
-          </Button>
-        </div>
       </div>
+
+      <div className="mb-4 w-full flex items-center justify-between">
+        <div className="flex-grow mr-4">
+          <TextInput
+            type="text"
+            placeholder="Search..."
+            rightIcon={AiOutlineSearch}
+            className="w-full sm:w-96"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select
+          color="gray"
+          value={view}
+          onChange={(e) => setView(e.target.value)}
+        >
+          <option value="All Items">Unclaimed Items</option>
+          <option value="Claimed Items">Claimed Items</option>
+        </Select>
+
+        <Button onClick={handleAddItem} color="blue" className="ml-3">
+          <HiPlus className="w-5 h-5 mr-2 -ml-1" />
+          Add Item
+        </Button>
+      </div>
+
       <div className="overflow-x-auto">
         <Table
           hoverable
@@ -248,11 +365,18 @@ export default function DashCrudItems() {
             <Table.HeadCell>Location</Table.HeadCell>
             <Table.HeadCell>Category</Table.HeadCell>
             <Table.HeadCell>Date Found</Table.HeadCell>
+            <Table.HeadCell>Office Stored</Table.HeadCell>
             <Table.HeadCell>Status</Table.HeadCell>
-            <Table.HeadCell>Actions</Table.HeadCell>
+            {view === "Claimed Items" && (
+              <Table.HeadCell>Claimant</Table.HeadCell>
+            )}{" "}
+            {view === "Claimed Items" && (
+              <Table.HeadCell>Claimed Date</Table.HeadCell>
+            )}
+            {view === "All Items" && <Table.HeadCell>Actions</Table.HeadCell>}
           </Table.Head>
           <Table.Body className="bg-white divide-y dark:divide-gray-700 dark:bg-gray-800">
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <Table.Row
                 key={item._id}
                 className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600"
@@ -283,36 +407,42 @@ export default function DashCrudItems() {
                 <Table.Cell className="px-6 py-4">
                   {new Date(item.dateFound).toLocaleDateString()}
                 </Table.Cell>
+                <Table.Cell className="px-6 py-4">{item.department}</Table.Cell>
                 <Table.Cell className="px-6 py-4">{item.status}</Table.Cell>
-                <Table.Cell className="px-6 py-4">
-                  <div className="flex items-center ml-auto space-x-2 sm:space-x-3">
-                    <Button onClick={() => handleEditItem(item)} color="blue">
-                      <HiPencilAlt className="w-4 h-4 mr-2" /> Edit
-                    </Button>
-                    <Button
-                      color="failure"
-                      onClick={() => {
-                        setShowModal(true);
-                        setItemIdToDelete(item._id);
-                      }}
-                    >
-                      <HiTrash className="w-4 h-4 mr-2" /> Delete
-                    </Button>
-                  </div>
-                </Table.Cell>
+                {view === "Claimed Items" && (
+                  <Table.Cell className="px-6 py-4">
+                    {item.claimantName}
+                  </Table.Cell>
+                )}
+                {view === "Claimed Items" && (
+                  <Table.Cell className="px-6 py-4">
+                    {new Date(item.claimedDate).toLocaleDateString()}
+                  </Table.Cell>
+                )}
+                {view === "All Items" && (
+                  <Table.Cell className="px-6 py-4">
+                    <div className="flex items-center ml-auto space-x-2 sm:space-x-3">
+                      <Button onClick={() => handleEditItem(item)} color="blue">
+                        <HiPencilAlt className="w-4 h-4 mr-2" /> Edit
+                      </Button>
+                      <Button
+                        color="failure"
+                        onClick={() => {
+                          setShowModal(true);
+                          setItemIdToDelete(item._id);
+                        }}
+                      >
+                        <HiTrash className="w-4 h-4 mr-2" /> Delete
+                      </Button>
+                    </div>
+                  </Table.Cell>
+                )}
               </Table.Row>
             ))}
           </Table.Body>
         </Table>
-        {showMore && (
-          <button
-            onClick={handleShowMore}
-            className="w-full text-teal-500 self-center text-sm py-7"
-          >
-            Show more
-          </button>
-        )}
       </div>
+
       <Modal
         show={showModal}
         onClose={() => setShowModal(false)}
@@ -446,51 +576,11 @@ export default function DashCrudItems() {
                   id="category"
                   className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                 >
-                  <option value="Mobile Phones">Mobile Phones</option>
-                  <option value="Laptops/Tablets">Laptops/Tablets</option>
-                  <option value="Headphones/Earbuds">Headphones/Earbuds</option>
-                  <option value="Chargers and Cables">
-                    Chargers and Cables
-                  </option>
-                  <option value="Cameras">Cameras</option>
-                  <option value="Electronic Accessories">
-                    Electronic Accessories
-                  </option>
-                  <option value="Textbooks">Textbooks</option>
-                  <option value="Notebooks">Notebooks</option>
-                  <option value="Stationery Items">Stationery Items</option>
-                  <option value="Art Supplies">Art Supplies</option>
-                  <option value="Calculators">Calculators</option>
-                  <option value="Coats and Jackets">Coats and Jackets</option>
-                  <option value="Hats and Caps">Hats and Caps</option>
-                  <option value="Scarves and Gloves">Scarves and Gloves</option>
-                  <option value="Bags and Backpacks">Bags and Backpacks</option>
-                  <option value="Sunglasses">Sunglasses</option>
-                  <option value="Jewelry and Watches">
-                    Jewelry and Watches
-                  </option>
-                  <option value="Umbrellas">Umbrellas</option>
-                  <option value="Wallets and Purses">Wallets and Purses</option>
-                  <option value="ID Cards and Passports">
-                    ID Cards and Passports
-                  </option>
-                  <option value="Keys">Keys</option>
-                  <option value="Personal Care Items">
-                    Personal Care Items
-                  </option>
-                  <option value="Sports Gear">Sports Gear</option>
-                  <option value="Gym Equipment">Gym Equipment</option>
-                  <option value="Bicycles and Skateboards">
-                    Bicycles and Skateboards
-                  </option>
-                  <option value="Musical Instruments">
-                    Musical Instruments
-                  </option>
-                  <option value="Water Bottles">Water Bottles</option>
-                  <option value="Lunch Boxes">Lunch Boxes</option>
-                  <option value="Toys and Games">Toys and Games</option>
-                  <option value="Decorative Items">Decorative Items</option>
-                  <option value="Other">Other</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="col-span-6">
@@ -505,18 +595,42 @@ export default function DashCrudItems() {
                   id="images"
                   accept="image/*"
                   multiple
-                  onChange={(e) => setFiles(e.target.files)}
+                  onChange={(e) => setFiles(Array.from(e.target.files))}
+                  disabled={itemToEdit.imageUrls.length >= 5} // Disable the file input if the limit is reached
                 />
                 <Button
                   type="button"
                   gradientDuoTone="pinkToOrange"
-                  onClick={() => uploadImages(files)}
+                  onClick={handleImageSubmit}
                   disabled={imageUploadProgress !== null}
                 >
                   {imageUploadProgress
                     ? `Uploading ${imageUploadProgress}%`
                     : "Upload Images"}
                 </Button>
+                {imageUploadError && (
+                  <Alert color="failure">{imageUploadError}</Alert>
+                )}
+                {itemToEdit.imageUrls.length > 0 && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {itemToEdit.imageUrls.map((url, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={url}
+                          alt={`Item ${index + 1}`}
+                          className="w-24 h-24 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute top-0 right-0 p-1 bg-red-500 rounded-full text-white"
+                        >
+                          <HiTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="items-center p-6 border-t border-gray-200 rounded-b dark:border-gray-700">
@@ -640,51 +754,11 @@ export default function DashCrudItems() {
                   id="category"
                   className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                 >
-                  <option value="Mobile Phones">Mobile Phones</option>
-                  <option value="Laptops/Tablets">Laptops/Tablets</option>
-                  <option value="Headphones/Earbuds">Headphones/Earbuds</option>
-                  <option value="Chargers and Cables">
-                    Chargers and Cables
-                  </option>
-                  <option value="Cameras">Cameras</option>
-                  <option value="Electronic Accessories">
-                    Electronic Accessories
-                  </option>
-                  <option value="Textbooks">Textbooks</option>
-                  <option value="Notebooks">Notebooks</option>
-                  <option value="Stationery Items">Stationery Items</option>
-                  <option value="Art Supplies">Art Supplies</option>
-                  <option value="Calculators">Calculators</option>
-                  <option value="Coats and Jackets">Coats and Jackets</option>
-                  <option value="Hats and Caps">Hats and Caps</option>
-                  <option value="Scarves and Gloves">Scarves and Gloves</option>
-                  <option value="Bags and Backpacks">Bags and Backpacks</option>
-                  <option value="Sunglasses">Sunglasses</option>
-                  <option value="Jewelry and Watches">
-                    Jewelry and Watches
-                  </option>
-                  <option value="Umbrellas">Umbrellas</option>
-                  <option value="Wallets and Purses">Wallets and Purses</option>
-                  <option value="ID Cards and Passports">
-                    ID Cards and Passports
-                  </option>
-                  <option value="Keys">Keys</option>
-                  <option value="Personal Care Items">
-                    Personal Care Items
-                  </option>
-                  <option value="Sports Gear">Sports Gear</option>
-                  <option value="Gym Equipment">Gym Equipment</option>
-                  <option value="Bicycles and Skateboards">
-                    Bicycles and Skateboards
-                  </option>
-                  <option value="Musical Instruments">
-                    Musical Instruments
-                  </option>
-                  <option value="Water Bottles">Water Bottles</option>
-                  <option value="Lunch Boxes">Lunch Boxes</option>
-                  <option value="Toys and Games">Toys and Games</option>
-                  <option value="Decorative Items">Decorative Items</option>
-                  <option value="Other">Other</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="col-span-6">
@@ -699,18 +773,42 @@ export default function DashCrudItems() {
                   id="images"
                   accept="image/*"
                   multiple
-                  onChange={(e) => setFiles(e.target.files)}
+                  onChange={(e) => setFiles(Array.from(e.target.files))}
+                  disabled={itemToEdit.imageUrls.length >= 5} // Disable the file input if the limit is reached
                 />
                 <Button
                   type="button"
                   gradientDuoTone="pinkToOrange"
-                  onClick={() => uploadImages(files)}
+                  onClick={handleImageSubmit}
                   disabled={imageUploadProgress !== null}
                 >
                   {imageUploadProgress
                     ? `Uploading ${imageUploadProgress}%`
                     : "Upload Images"}
                 </Button>
+                {imageUploadError && (
+                  <Alert color="failure">{imageUploadError}</Alert>
+                )}
+                {itemToEdit.imageUrls.length > 0 && (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {itemToEdit.imageUrls.map((url, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={url}
+                          alt={`Item ${index + 1}`}
+                          className="w-24 h-24 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute top-0 right-0 p-1 bg-red-500 rounded-full text-white"
+                        >
+                          <HiTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="items-center p-6 border-t border-gray-200 rounded-b dark:border-gray-700">
