@@ -1,12 +1,7 @@
-import React, { useState, useEffect } from "react";
-import {
-  FileInput,
-  TextInput,
-  Select,
-  Button,
-  Alert,
-  Datepicker,
-} from "flowbite-react";
+import React, { useState } from "react";
+import { FileInput, TextInput, Select, Button, Alert } from "flowbite-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
   getStorage,
   ref,
@@ -26,7 +21,6 @@ export default function CreateLostFoundPost() {
     description: "",
     category: "",
     imageUrls: [],
-    department: "", // Added department field
   });
   const [imageUploadProgress, setImageUploadProgress] = useState(null);
   const [imageUploadError, setImageUploadError] = useState(false);
@@ -35,21 +29,6 @@ export default function CreateLostFoundPost() {
   const [key, setKey] = useState(0);
 
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Fetch user department when the component mounts
-    const fetchUserDetails = async () => {
-      try {
-        const response = await fetch("/api/users/details"); // Adjust the endpoint as needed
-        const data = await response.json();
-        setFormData((prev) => ({ ...prev, department: data.department }));
-      } catch (error) {
-        console.error("Error fetching user details:", error);
-      }
-    };
-
-    fetchUserDetails();
-  }, []);
 
   const handleImageSubmit = (e) => {
     if (files.length > 0 && files.length + formData.imageUrls.length <= 5) {
@@ -162,7 +141,6 @@ export default function CreateLostFoundPost() {
         description: "",
         category: "",
         imageUrls: [],
-        department: "", // Reset department field
       });
       setFiles([]); // Also clear selected files
       setKey((prevKey) => prevKey + 1); // Increment key to force re-render of file input
@@ -219,14 +197,12 @@ export default function CreateLostFoundPost() {
             required
             name="item"
             className="flex-auto sm:flex-1"
-            value={formData.item}
             onChange={handleChange}
           />
           <Select
             name="category"
             required
             className="w-full sm:w-1/4"
-            value={formData.category}
             onChange={handleChange}
           >
             <option value="">Select a category</option>
@@ -237,17 +213,20 @@ export default function CreateLostFoundPost() {
             ))}
           </Select>
         </div>
-        <Datepicker
-          selected={formData.dateFound}
-          onChange={handleDateChange}
-          required
-        />
+        <div className="relative">
+          <DatePicker
+            selected={formData.dateFound}
+            onChange={handleDateChange}
+            required
+            maxDate={new Date()}
+            className="w-full p-2.5 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          />
+        </div>
         <TextInput
           type="text"
           placeholder="Location Found"
           required
           name="location"
-          value={formData.location}
           onChange={handleChange}
         />
         <textarea
@@ -256,7 +235,6 @@ export default function CreateLostFoundPost() {
           required
           rows="4"
           name="description"
-          value={formData.description}
           onChange={handleChange}
         ></textarea>
 
