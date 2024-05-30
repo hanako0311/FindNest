@@ -23,6 +23,8 @@ ChartJS.register(
   PointElement,
   LineElement
 );
+import Papa from "papaparse";
+import fileDownload from "js-file-download";
 
 export default function DashAnalytics() {
   const [totalItemsReported, setTotalItemsReported] = useState(0);
@@ -103,6 +105,33 @@ export default function DashAnalytics() {
 
   const getCount = (items, status) => items.filter((item) => item.status === status).length;
 
+  const generateReport = () => {
+    try {
+      const data = items.map((item) => ({
+        Item: item.item,
+        DateFound: item.displayDate,
+        Location: item.location,
+        Description: item.description,
+        Category: item.category,
+        Status: item.action,
+        ClaimantName: item.claimantName || "N/A",
+        ClaimedDate: item.claimedDate
+          ? new Date(item.claimedDate).toISOString().split("T")[0]
+          : "N/A",
+      }));
+
+      const csv = Papa.unparse(data);
+
+      fileDownload(csv, "found_items_report.csv");
+    } catch (error) {
+      console.error("Error generating report:", error.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, [currentUser]);
+
   useEffect(() => {
     if (currentUser && currentUser._id) {
       fetchItems();
@@ -115,8 +144,8 @@ export default function DashAnalytics() {
       {
         label: "Item Status",
         data: [itemsClaimed, itemsPending],
-        backgroundColor: ["rgba(14, 159, 110, 0.8)", "rgba(231, 33, 33, 0.8)"],
-        borderColor: ["rgba(14, 159, 110, 0.8)", "rgba(231, 33, 33, 0.8)"],
+        backgroundColor: ["rgba(14, 159, 110, 0.8)", "rgba(194, 29, 29, 0.8)"],
+        borderColor: ["rgba(14, 159, 110, 0.8)", "rgba(194, 29, 29, 0.8)"],
         borderWidth: 1,
       },
     ],
@@ -235,9 +264,18 @@ export default function DashAnalytics() {
       </div>
       <div className="mx-auto p-3 w-full overflow-x-auto">
         <br />
-        <h1 className="text-3xl font-bold text-gray-700 dark:text-gray-300 mb-4">
-          Audit Logs
-        </h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold text-gray-700 dark:text-gray-300 mb-4">
+            Audit Logs
+          </h1>
+          <button
+            onClick={generateReport}
+            className="bg-red-900 hover:bg-red-900 text-white font-bold py-2 px-4 rounded"
+          >
+            Download Report
+          </button>
+        </div>
+        <br></br>
         <Table
           hoverable
           className="min-w-full text-sm text-left text-gray-500 dark:text-gray-400"
