@@ -1,12 +1,7 @@
 import React, { useState } from "react";
-import {
-  FileInput,
-  TextInput,
-  Select,
-  Button,
-  Alert,
-  Datepicker,
-} from "flowbite-react";
+import { FileInput, TextInput, Select, Button, Alert } from "flowbite-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
   getStorage,
   ref,
@@ -218,11 +213,15 @@ export default function CreateLostFoundPost() {
             ))}
           </Select>
         </div>
-        <Datepicker
-          selected={formData.dateFound}
-          onChange={handleDateChange}
-          required
-        />
+        <div className="relative">
+          <DatePicker
+            selected={formData.dateFound}
+            onChange={handleDateChange}
+            required
+            maxDate={new Date()}
+            className="w-full p-2.5 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          />
+        </div>
         <TextInput
           type="text"
           placeholder="Location Found"
