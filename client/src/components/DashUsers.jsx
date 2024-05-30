@@ -3,9 +3,7 @@ import { useSelector } from "react-redux";
 import { Modal, Table, Button, TextInput, Select, Toast } from "flowbite-react";
 import {
   HiOutlineExclamationCircle,
-  HiSearch,
   HiTrash,
-  HiDotsVertical,
   HiDownload,
   HiPlus,
   HiPencilAlt,
@@ -13,12 +11,14 @@ import {
   HiXCircle,
 } from "react-icons/hi";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { AiOutlineSearch } from "react-icons/ai";
 
 const departments = ["SSG", "SSO", "SSD"];
 
 export default function DashUsers() {
   const { currentUser } = useSelector((state) => state.user);
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [showMore, setShowMore] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [userIdToDelete, setUserIdToDelete] = useState("");
@@ -41,6 +41,7 @@ export default function DashUsers() {
   const [addSuccessMessage, setAddSuccessMessage] = useState("");
   const [editErrorMessage, setEditErrorMessage] = useState("");
   const [editSuccessMessage, setEditSuccessMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -49,6 +50,7 @@ export default function DashUsers() {
         const data = await res.json();
         if (res.ok) {
           setUsers(data.users);
+          setFilteredUsers(data.users);
           if (data.users.length < 9) {
             setShowMore(false);
           }
@@ -61,6 +63,22 @@ export default function DashUsers() {
       fetchUsers();
     }
   }, [currentUser._id]);
+
+  useEffect(() => {
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    const filtered = users.filter((user) => {
+      const matchesName =
+        user.firstname.toLowerCase().includes(lowerCaseSearchTerm) ||
+        user.lastname.toLowerCase().includes(lowerCaseSearchTerm) ||
+        user.middlename.toLowerCase().includes(lowerCaseSearchTerm);
+      const matchesDepartment = user.department
+        .toLowerCase()
+        .includes(lowerCaseSearchTerm);
+      const matchesRole = user.role.toLowerCase().includes(lowerCaseSearchTerm);
+      return matchesName || matchesDepartment || matchesRole;
+    });
+    setFilteredUsers(filtered);
+  }, [searchTerm, users]);
 
   const handleShowMore = async () => {
     const startIndex = users.length;
@@ -240,17 +258,26 @@ export default function DashUsers() {
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">
           All Users
         </h1>
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          <Button onClick={handleAddUserModal} color="blue">
+   
+      </div>
+
+      <div className="mb-4 w-full flex items-center justify-between">
+        <div className="flex-grow mr-4">
+            <TextInput
+              type="text"
+              placeholder="Search by name, department, or role..."
+              rightIcon={AiOutlineSearch}
+              className="w-full sm:w-96"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+        </div>
+        <Button onClick={handleAddUserModal} color="blue" className="flex items-center">
             <HiPlus className="w-5 h-5 mr-2 -ml-1" />
             Add user
-          </Button>
-          <Button color="gray">
-            <HiDownload className="w-5 h-5 mr-2 -ml-1" />
-            Export
-          </Button>
-        </div>
+        </Button>
       </div>
+
 
       <div className="overflow-x-auto">
         <Table
@@ -266,7 +293,7 @@ export default function DashUsers() {
             <Table.HeadCell>Actions</Table.HeadCell>
           </Table.Head>
           <Table.Body className="bg-white divide-y dark:divide-gray-700 dark:bg-gray-800">
-            {users.map((user) => (
+            {filteredUsers.map((user) => (
               <Table.Row
                 key={user._id}
                 className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600"
@@ -280,10 +307,7 @@ export default function DashUsers() {
                     />
                     <div className="ml-4">
                       <div className="text-base font-semibold text-gray-900 dark:text-white">
-                        {user.firstname} {user.lastname}
-                      </div>
-                      <div className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                        {user.middlename}
+                        {user.firstname} {user.middlename} {user.lastname}
                       </div>
                     </div>
                   </div>
