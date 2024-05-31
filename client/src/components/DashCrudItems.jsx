@@ -1,23 +1,72 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Table, Button, Modal, FileInput, Select, TextInput, Alert, Toast } from "flowbite-react";
-import { HiCheckCircle, HiXCircle, HiOutlineExclamationCircle, HiPlus, HiPencilAlt, HiTrash, HiOutlineTrash } from "react-icons/hi";
+import {
+  Table,
+  Button,
+  Modal,
+  FileInput,
+  Select,
+  TextInput,
+  Alert,
+  Toast,
+  Radio,
+  Label,
+} from "flowbite-react";
+import {
+  HiCheckCircle,
+  HiXCircle,
+  HiOutlineExclamationCircle,
+  HiPlus,
+  HiPencilAlt,
+  HiTrash,
+  HiOutlineTrash,
+} from "react-icons/hi";
 import { AiOutlineSearch } from "react-icons/ai";
 import { Link } from "react-router-dom";
 import Webcam from "react-webcam";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
 import { app } from "../firebase";
 import { useSelector } from "react-redux";
 
 const categories = [
-  "Mobile Phones", "Laptops/Tablets", "Headphones/Earbuds", "Chargers and Cables", 
-  "Cameras", "Electronic Accessories", "Textbooks", "Notebooks", 
-  "Stationery Items", "Art Supplies", "Calculators", "Coats and Jackets", 
-  "Hats and Caps", "Scarves and Gloves", "Bags and Backpacks", 
-  "Sunglasses", "Jewelry and Watches", "Umbrellas", "Wallets and Purses", 
-  "ID Cards and Passports", "Keys", "Personal Care Items", "Sports Gear", 
-  "Gym Equipment", "Bicycles and Skateboards", "Musical Instruments", 
-  "Water Bottles", "Lunch Boxes", "Toys and Games", "Decorative Items", "Other"
+  "Mobile Phones",
+  "Laptops/Tablets",
+  "Headphones/Earbuds",
+  "Chargers and Cables",
+  "Cameras",
+  "Electronic Accessories",
+  "Textbooks",
+  "Notebooks",
+  "Stationery Items",
+  "Art Supplies",
+  "Calculators",
+  "Coats and Jackets",
+  "Hats and Caps",
+  "Scarves and Gloves",
+  "Bags and Backpacks",
+  "Sunglasses",
+  "Jewelry and Watches",
+  "Umbrellas",
+  "Wallets and Purses",
+  "ID Cards and Passports",
+  "Keys",
+  "Personal Care Items",
+  "Sports Gear",
+  "Gym Equipment",
+  "Bicycles and Skateboards",
+  "Musical Instruments",
+  "Water Bottles",
+  "Lunch Boxes",
+  "Toys and Games",
+  "Decorative Items",
+  "Other",
 ];
+
+const offices = ["SSO", "SSG", "SSD"];
 
 export default function DashCrudItems() {
   const { currentUser } = useSelector((state) => state.user);
@@ -40,6 +89,7 @@ export default function DashCrudItems() {
     status: "available",
     claimantName: "",
     claimedDate: "",
+    department: "SSO",
   });
   const [files, setFiles] = useState([]);
   const [webcamImage, setWebcamImage] = useState(null);
@@ -82,7 +132,7 @@ export default function DashCrudItems() {
         item.item.toLowerCase().includes(lowerCaseSearchTerm) ||
         item.category.toLowerCase().includes(lowerCaseSearchTerm) ||
         item.location.toLowerCase().includes(lowerCaseSearchTerm) ||
-        item.description.toLowerCase().includes(lowerCaseSearchTerm) ||
+        item.description.toLowerCase().toLowerCase().includes(lowerCaseSearchTerm) ||
         item.department?.toLowerCase().includes(lowerCaseSearchTerm) ||
         new Date(item.dateFound).toLocaleDateString().includes(lowerCaseSearchTerm);
       const matchesCategory = selectedCategory
@@ -212,19 +262,19 @@ export default function DashCrudItems() {
           setClaimedItems((prev) =>
             updatedItem._id
               ? prev.map((item) => (item._id === updatedItem._id ? data : item))
-              : [data, ...prev] // Prepend the new item
+              : [...prev, data]
           );
         } else {
           setItems((prev) =>
             updatedItem._id
-              ? prev.map((item) => (item._id === updatedItem._id ? data : item))
-              : [data, ...prev] // Prepend the new item
+              ? [data, ...prev.filter((item) => item._id !== updatedItem._id)]
+              : [data, ...prev]
           );
         }
         setFilteredItems((prev) =>
           updatedItem._id
             ? prev.map((item) => (item._id === updatedItem._id ? data : item))
-            : [data, ...prev] // Prepend the new item
+            : [data, ...prev]
         );
         setShowAddModal(false);
         setShowEditModal(false);
@@ -259,6 +309,7 @@ export default function DashCrudItems() {
       status: "available",
       claimantName: "",
       claimedDate: "",
+      department: "SSO",
     });
     setFiles([]);
     setShowAddModal(true);
@@ -275,6 +326,7 @@ export default function DashCrudItems() {
       status: "available",
       claimantName: "",
       claimedDate: "",
+      department: "SSO",
     });
     setFiles([]);
     setWebcamImage(null);
@@ -470,7 +522,7 @@ export default function DashCrudItems() {
                 >
                   Item Name
                 </label>
-                <TextInput
+                <input
                   type="text"
                   name="item"
                   value={itemToEdit.item}
@@ -478,6 +530,7 @@ export default function DashCrudItems() {
                     setItemToEdit({ ...itemToEdit, item: e.target.value })
                   }
                   id="item"
+                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                   placeholder="Item Name"
                   required
                 />
@@ -489,7 +542,7 @@ export default function DashCrudItems() {
                 >
                   Date Found
                 </label>
-                <TextInput
+                <input
                   type="date"
                   name="dateFound"
                   value={itemToEdit.dateFound}
@@ -497,6 +550,7 @@ export default function DashCrudItems() {
                     setItemToEdit({ ...itemToEdit, dateFound: e.target.value })
                   }
                   id="dateFound"
+                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                   required
                 />
               </div>
@@ -507,7 +561,7 @@ export default function DashCrudItems() {
                 >
                   Location
                 </label>
-                <TextInput
+                <input
                   type="text"
                   name="location"
                   value={itemToEdit.location}
@@ -515,6 +569,7 @@ export default function DashCrudItems() {
                     setItemToEdit({ ...itemToEdit, location: e.target.value })
                   }
                   id="location"
+                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                   placeholder="Location"
                   required
                 />
@@ -526,14 +581,18 @@ export default function DashCrudItems() {
                 >
                   Description
                 </label>
-                <TextInput
+                <input
                   type="text"
                   name="description"
                   value={itemToEdit.description}
                   onChange={(e) =>
-                    setItemToEdit({ ...itemToEdit, description: e.target.value })
+                    setItemToEdit({
+                      ...itemToEdit,
+                      description: e.target.value,
+                    })
                   }
                   id="description"
+                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                   placeholder="Description"
                   required
                 />
@@ -545,26 +604,51 @@ export default function DashCrudItems() {
                 >
                   Category
                 </label>
-                <Select
+                <select
                   name="category"
                   value={itemToEdit.category}
                   onChange={(e) =>
                     setItemToEdit({ ...itemToEdit, category: e.target.value })
                   }
                   id="category"
+                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                 >
                   {categories.map((category) => (
                     <option key={category} value={category}>
                       {category}
                     </option>
                   ))}
-                </Select>
+                </select>
+              </div>
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="department"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Office Stored
+                </label>
+                <div className="flex flex-col">
+                  {offices.map((office) => (
+                    <div key={office} className="flex items-center mb-2">
+                      <Radio
+                        id={office}
+                        name="department"
+                        value={office}
+                        checked={itemToEdit.department === office}
+                        onChange={(e) =>
+                          setItemToEdit({ ...itemToEdit, department: e.target.value })
+                        }
+                        className="mr-2"
+                      />
+                      <Label htmlFor={office}>{office}</Label>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="col-span-6">
                 <label
                   htmlFor="imageUrls"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
+                  className="block mb-2 text-sm font-medium text.text-gray-900 dark:text-white">
                   Image URLs
                 </label>
                 <FileInput
@@ -584,6 +668,16 @@ export default function DashCrudItems() {
                 >
                   Upload Images
                 </Button>
+                {webcamImage && (
+                  <Button
+                    type="button"
+                    gradientDuoTone="pinkToOrange"
+                    onClick={uploadWebcamImage}
+                    className="mt-2 ml-2"
+                  >
+                    Upload Webcam Image
+                  </Button>
+                )}
                 {imageUploadError && (
                   <Alert color="failure" className="mt-2">
                     {imageUploadError}
@@ -676,199 +770,254 @@ export default function DashCrudItems() {
 
       {/* Edit Item Modal */}
       <Modal
-      show={showEditModal}
-      onClose={() => {
-        setShowEditModal(false);
-        resetModalState();
-      }}
-      size="2xl"
-    >
-      <Modal.Header>Edit item</Modal.Header>
-      <Modal.Body>
-        <form onSubmit={handleSaveItem}>
-          <div className="grid grid-cols-6 gap-6">
-            <div className="col-span-6 sm:col-span-3">
-              <label htmlFor="item" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Item Name
-              </label>
-              <TextInput
-                type="text"
-                name="item"
-                value={itemToEdit.item}
-                onChange={(e) => setItemToEdit({ ...itemToEdit, item: e.target.value })}
-                id="item"
-                placeholder="Item Name"
-                required
-              />
-            </div>
-            <div className="col-span-6 sm:col-span-3">
-              <label htmlFor="dateFound" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Date Found
-              </label>
-              <TextInput
-                type="date"
-                name="dateFound"
-                value={itemToEdit.dateFound}
-                onChange={(e) => setItemToEdit({ ...itemToEdit, dateFound: e.target.value })}
-                id="dateFound"
-                required
-              />
-            </div>
-            <div className="col-span-6 sm:col-span-3">
-              <label htmlFor="location" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Location
-              </label>
-              <TextInput
-                type="text"
-                name="location"
-                value={itemToEdit.location}
-                onChange={(e) => setItemToEdit({ ...itemToEdit, location: e.target.value })}
-                id="location"
-                placeholder="Location"
-                required
-              />
-            </div>
-            <div className="col-span-6 sm:col-span-3">
-              <label htmlFor="description" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Description
-              </label>
-              <TextInput
-                type="text"
-                name="description"
-                value={itemToEdit.description}
-                onChange={(e) => setItemToEdit({ ...itemToEdit, description: e.target.value })}
-                id="description"
-                placeholder="Description"
-                required
-              />
-            </div>
-            <div className="col-span-6 sm:col-span-3">
-              <label htmlFor="category" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Category
-              </label>
-              <Select
-                name="category"
-                value={itemToEdit.category}
-                onChange={(e) => setItemToEdit({ ...itemToEdit, category: e.target.value })}
-                id="category"
-              >
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="col-span-6">
-              <label htmlFor="imageUrls" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                Image URLs
-              </label>
-              <FileInput
-                type="file"
-                id="images"
-                accept="image/*"
-                multiple
-                onChange={(e) => setFiles(Array.from(e.target.files))}
-                disabled={itemToEdit.imageUrls.length >= 5}
-              />
-              <Button
-                type="button"
-                gradientDuoTone="pinkToOrange"
-                onClick={handleImageSubmit}
-                disabled={files.length === 0} // Disable button if no files selected
-                className="mt-2"
-              >
-                Upload Images
-              </Button>
-              {imageUploadError && (
-                <Alert color="failure" className="mt-2">
-                  {imageUploadError}
-                </Alert>
-              )}
-              {itemToEdit.imageUrls.length >= 5 && (
-                <Alert color="warning" className="mt-2">
-                  Number of images is already at the maximum.
-                </Alert>
-              )}
-              {itemToEdit.imageUrls.length > 0 && (
-                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {itemToEdit.imageUrls.map((url, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={url}
-                        alt={`Item ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg shadow-md"
+        show={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          resetModalState();
+        }}
+        size="2xl"
+      >
+        <Modal.Header>Edit item</Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleSaveItem}>
+            <div className="grid grid-cols-6 gap-6">
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="item"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Item Name
+                </label>
+                <TextInput
+                  type="text"
+                  name="item"
+                  value={itemToEdit.item}
+                  onChange={(e) => setItemToEdit({ ...itemToEdit, item: e.target.value })}
+                  id="item"
+                  placeholder="Item Name"
+                  required
+                />
+              </div>
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="dateFound"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Date Found
+                </label>
+                <TextInput
+                  type="date"
+                  name="dateFound"
+                  value={itemToEdit.dateFound}
+                  onChange={(e) => setItemToEdit({ ...itemToEdit, dateFound: e.target.value })}
+                  id="dateFound"
+                  required
+                />
+              </div>
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="location"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Location
+                </label>
+                <TextInput
+                  type="text"
+                  name="location"
+                  value={itemToEdit.location}
+                  onChange={(e) => setItemToEdit({ ...itemToEdit, location: e.target.value })}
+                  id="location"
+                  placeholder="Location"
+                  required
+                />
+              </div>
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="description"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Description
+                </label>
+                <TextInput
+                  type="text"
+                  name="description"
+                  value={itemToEdit.description}
+                  onChange={(e) => setItemToEdit({ ...itemToEdit, description: e.target.value })}
+                  id="description"
+                  placeholder="Description"
+                  required
+                />
+              </div>
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="category"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Category
+                </label>
+                <Select
+                  name="category"
+                  value={itemToEdit.category}
+                  onChange={(e) => setItemToEdit({ ...itemToEdit, category: e.target.value })}
+                  id="category"
+                >
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="department"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Office Stored
+                </label>
+                <div className="flex flex-col">
+                  {offices.map((office) => (
+                    <div key={office} className="flex items-center mb-2">
+                      <Radio
+                        id={office}
+                        name="department"
+                        value={office}
+                        checked={itemToEdit.department === office}
+                        onChange={(e) =>
+                          setItemToEdit({ ...itemToEdit, department: e.target.value })
+                        }
+                        className="mr-2"
                       />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(index)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white"
-                      >
-                        <HiOutlineTrash className="w-4 h-4" />
-                      </button>
+                      <Label htmlFor={office}>{office}</Label>
                     </div>
                   ))}
                 </div>
-              )}
-              <Button
-                type="button"
-                gradientDuoTone="pinkToOrange"
-                onClick={() => setShowWebcam((prev) => !prev)}
-                className="mt-4"
-              >
-                {showWebcam ? "Close Webcam" : "Open Webcam"}
-              </Button>
-              {showWebcam && (
-                <div className="mt-4">
-                  <Webcam
-                    audio={false}
-                    ref={webcamRef}
-                    screenshotFormat="image/jpeg"
-                    className="w-full h-64 border-2 border-gray-300 rounded-lg"
-                  />
-                  <div className="mt-2 flex space-x-2">
-                    <Button
-                      type="button"
-                      gradientDuoTone="pinkToOrange"
-                      onClick={captureWebcamImage}
-                    >
-                      Capture Image
-                    </Button>
-                    {webcamImage && (
+              </div>
+              <div className="col-span-6">
+                <label
+                  htmlFor="imageUrls"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Image URLs
+                </label>
+                <FileInput
+                  type="file"
+                  id="images"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => setFiles(Array.from(e.target.files))}
+                  disabled={itemToEdit.imageUrls.length >= 5}
+                />
+                <Button
+                  type="button"
+                  gradientDuoTone="pinkToOrange"
+                  onClick={handleImageSubmit}
+                  disabled={files.length === 0} // Disable button if no files selected
+                  className="mt-2"
+                >
+                  Upload Images
+                </Button>
+                {webcamImage && (
+                  <Button
+                    type="button"
+                    gradientDuoTone="pinkToOrange"
+                    onClick={uploadWebcamImage}
+                    className="mt-2 ml-2"
+                  >
+                    Upload Webcam Image
+                  </Button>
+                )}
+                {imageUploadError && (
+                  <Alert color="failure" className="mt-2">
+                    {imageUploadError}
+                  </Alert>
+                )}
+                {itemToEdit.imageUrls.length >= 5 && (
+                  <Alert color="warning" className="mt-2">
+                    Number of images is already at the maximum.
+                  </Alert>
+                )}
+                {itemToEdit.imageUrls.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {itemToEdit.imageUrls.map((url, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={url}
+                          alt={`Item ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg shadow-md"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white"
+                        >
+                          <HiOutlineTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  gradientDuoTone="pinkToOrange"
+                  onClick={() => setShowWebcam((prev) => !prev)}
+                  className="mt-4"
+                >
+                  {showWebcam ? "Close Webcam" : "Open Webcam"}
+                </Button>
+                {showWebcam && (
+                  <div className="mt-4">
+                    <Webcam
+                      audio={false}
+                      ref={webcamRef}
+                      screenshotFormat="image/jpeg"
+                      className="w-full h-64 border-2 border-gray-300 rounded-lg"
+                    />
+                    <div className="mt-2 flex space-x-2">
                       <Button
                         type="button"
                         gradientDuoTone="pinkToOrange"
-                        onClick={uploadWebcamImage}
+                        onClick={captureWebcamImage}
                       >
-                        Upload Webcam Image
+                        Capture Image
                       </Button>
-                    )}
+                      {webcamImage && (
+                        <Button
+                          type="button"
+                          gradientDuoTone="pinkToOrange"
+                          onClick={uploadWebcamImage}
+                        >
+                          Upload Webcam Image
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-              {webcamImage && (
-                <div className="mt-4">
-                  <img
-                    src={webcamImage}
-                    alt="Captured"
-                    className="w-full h-64 object-cover rounded-lg shadow-md"
-                  />
-                </div>
-              )}
+                )}
+                {webcamImage && (
+                  <div className="mt-4">
+                    <img
+                      src={webcamImage}
+                      alt="Captured"
+                      className="w-full h-64 object-cover rounded-lg shadow-md"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="mt-6 flex justify-end">
-            <Button
-              type="submit"
-              gradientDuoTone="pinkToOrange"
-              className="w-full sm:w-auto"
-            >
-              Save all
-            </Button>
-          </div>
-        </form>
-      </Modal.Body>
-    </Modal>
+            <div className="mt-6 flex justify-end">
+              <Button
+                type="submit"
+                gradientDuoTone="pinkToOrange"
+                className="w-full sm:w-auto"
+              >
+                Save all
+              </Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }
+
+

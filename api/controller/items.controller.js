@@ -1,27 +1,13 @@
 import Item from "../models/items.model.js";
-import User from "../models/user.model.js"; // Import the User model
+import User from "../models/user.model.js";
 import { errorHandler } from "../utils/error.js";
 import validator from "validator"; // npm install validator
 
 export const createItem = async (req, res, next) => {
-  const { item, dateFound, location, description, imageUrls, category } =
-    req.body;
+  const { item, dateFound, location, description, imageUrls, category } = req.body;
 
-  if (
-    !item ||
-    !dateFound ||
-    !location ||
-    !description ||
-    !category ||
-    !imageUrls ||
-    imageUrls.length === 0
-  ) {
-    return next(
-      errorHandler(
-        400,
-        "Please fill in all required fields, including image URLs"
-      )
-    );
+  if (!item || !dateFound || !location || !description || !category || !imageUrls || imageUrls.length === 0) {
+    return next(errorHandler(400, "Please fill in all required fields, including image URLs"));
   }
 
   if (!imageUrls.every((url) => validator.isURL(url))) {
@@ -93,24 +79,10 @@ export const getItemDetails = async (req, res) => {
 
 export const updateItem = async (req, res, next) => {
   const { itemId } = req.params;
-  const { item, dateFound, location, description, imageUrls, category } =
-    req.body;
+  const { item, dateFound, location, description, imageUrls, category, department } = req.body;
 
-  if (
-    !item ||
-    !dateFound ||
-    !location ||
-    !description ||
-    !category ||
-    !imageUrls ||
-    imageUrls.length === 0
-  ) {
-    return next(
-      errorHandler(
-        400,
-        "Please fill in all required fields, including image URLs"
-      )
-    );
+  if (!item || !dateFound || !location || !description || !category || !imageUrls || imageUrls.length === 0) {
+    return next(errorHandler(400, "Please fill in all required fields, including image URLs"));
   }
 
   if (!imageUrls.every((url) => validator.isURL(url))) {
@@ -125,7 +97,7 @@ export const updateItem = async (req, res, next) => {
   try {
     const updatedItem = await Item.findByIdAndUpdate(
       itemId,
-      { item, dateFound, location, description, imageUrls, category },
+      { item, dateFound, location, description, imageUrls, category, department },
       { new: true, runValidators: true }
     );
 
@@ -177,9 +149,7 @@ export const claimItem = async (req, res) => {
     }
     res.json(updatedItem);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to claim item", error: error.toString() });
+    res.status(500).json({ message: "Failed to claim item", error: error.toString() });
   }
 };
 
@@ -197,11 +167,9 @@ export const getTotalItems = async (req, res) => {
     });
   } catch (error) {
     console.error("Failed to fetch item counts:", error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to fetch item counts",
-        error: error.toString(),
-      });
+    res.status(500).json({
+      message: "Failed to fetch item counts",
+      error: error.toString(),
+    });
   }
 };

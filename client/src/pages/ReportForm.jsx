@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { FileInput, TextInput, Select, Button, Alert } from "flowbite-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -22,6 +22,7 @@ export default function CreateLostFoundPost() {
     description: "",
     category: "",
     imageUrls: [],
+    department: "",
   });
   const [imageUploadError, setImageUploadError] = useState(false);
   const [reportSubmitError, setReportSubmitError] = useState(null);
@@ -33,8 +34,25 @@ export default function CreateLostFoundPost() {
   const navigate = useNavigate();
   const webcamRef = useRef(null);
 
+  useEffect(() => {
+    const fetchUserDepartment = async () => {
+      try {
+        const res = await fetch("/api/user/current");
+        const data = await res.json();
+        setFormData((prev) => ({
+          ...prev,
+          department: data.department,
+        }));
+      } catch (error) {
+        console.error("Error fetching user department:", error);
+      }
+    };
+
+    fetchUserDepartment();
+  }, []);
+
   const handleImageSubmit = (e) => {
-    if (files.length > 0 && files.length + formData.imageUrls.length <= 5) {
+    if (files.length > 0 && formData.imageUrls.length + files.length <= 5) {
       const promises = [];
 
       for (let i = 0; i < files.length; i++) {
@@ -43,10 +61,10 @@ export default function CreateLostFoundPost() {
 
       Promise.all(promises)
         .then((urls) => {
-          setFormData({
-            ...formData,
-            imageUrls: formData.imageUrls.concat(urls),
-          });
+          setFormData((prevFormData) => ({
+            ...prevFormData,
+            imageUrls: prevFormData.imageUrls.concat(urls),
+          }));
           setImageUploadError(false);
         })
         .catch((err) => {
@@ -91,23 +109,23 @@ export default function CreateLostFoundPost() {
   };
 
   const handleRemoveImage = (index) => {
-    setFormData({
-      ...formData,
-      imageUrls: formData.imageUrls.filter((_, i) => i !== index),
-    });
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      imageUrls: prevFormData.imageUrls.filter((_, i) => i !== index),
+    }));
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((prevFormData) => ({
+      ...prevFormData,
       [name]: value,
     }));
   };
 
   const handleDateChange = (date) => {
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((prevFormData) => ({
+      ...prevFormData,
       dateFound: date,
     }));
   };
@@ -141,6 +159,7 @@ export default function CreateLostFoundPost() {
         description: "",
         category: "",
         imageUrls: [],
+        department: "", // Reset department field
       });
       setFiles([]); // Also clear selected files
       setKey((prevKey) => prevKey + 1); // Increment key to force re-render of file input
