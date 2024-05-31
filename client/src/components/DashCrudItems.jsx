@@ -1,65 +1,22 @@
-import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import {
-  HiCheckCircle,
-  HiXCircle,
-  HiOutlineExclamationCircle,
-  HiPlus,
-  HiPencilAlt,
-  HiTrash,
-} from "react-icons/hi";
-import {
-  Table,
-  Button,
-  Modal,
-  FileInput,
-  Toast,
-  Select,
-  TextInput,
-  Alert,
-} from "flowbite-react";
-import { Link } from "react-router-dom";
-import {
-  getStorage,
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-} from "firebase/storage";
-import { app } from "../firebase";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Table, Button, Modal, FileInput, Select, TextInput, Alert, Toast } from "flowbite-react";
+import { HiCheckCircle, HiXCircle, HiOutlineExclamationCircle, HiPlus, HiPencilAlt, HiTrash, HiOutlineTrash } from "react-icons/hi";
 import { AiOutlineSearch } from "react-icons/ai";
+import { Link } from "react-router-dom";
+import Webcam from "react-webcam";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { app } from "../firebase";
+import { useSelector } from "react-redux";
 
 const categories = [
-  "Mobile Phones",
-  "Laptops/Tablets",
-  "Headphones/Earbuds",
-  "Chargers and Cables",
-  "Cameras",
-  "Electronic Accessories",
-  "Textbooks",
-  "Notebooks",
-  "Stationery Items",
-  "Art Supplies",
-  "Calculators",
-  "Coats and Jackets",
-  "Hats and Caps",
-  "Scarves and Gloves",
-  "Bags and Backpacks",
-  "Sunglasses",
-  "Jewelry and Watches",
-  "Umbrellas",
-  "Wallets and Purses",
-  "ID Cards and Passports",
-  "Keys",
-  "Personal Care Items",
-  "Sports Gear",
-  "Gym Equipment",
-  "Bicycles and Skateboards",
-  "Musical Instruments",
-  "Water Bottles",
-  "Lunch Boxes",
-  "Toys and Games",
-  "Decorative Items",
-  "Other",
+  "Mobile Phones", "Laptops/Tablets", "Headphones/Earbuds", "Chargers and Cables", 
+  "Cameras", "Electronic Accessories", "Textbooks", "Notebooks", 
+  "Stationery Items", "Art Supplies", "Calculators", "Coats and Jackets", 
+  "Hats and Caps", "Scarves and Gloves", "Bags and Backpacks", 
+  "Sunglasses", "Jewelry and Watches", "Umbrellas", "Wallets and Purses", 
+  "ID Cards and Passports", "Keys", "Personal Care Items", "Sports Gear", 
+  "Gym Equipment", "Bicycles and Skateboards", "Musical Instruments", 
+  "Water Bottles", "Lunch Boxes", "Toys and Games", "Decorative Items", "Other"
 ];
 
 export default function DashCrudItems() {
@@ -85,20 +42,26 @@ export default function DashCrudItems() {
     claimedDate: "",
   });
   const [files, setFiles] = useState([]);
-  const [imageUploadProgress, setImageUploadProgress] = useState(null);
+  const [webcamImage, setWebcamImage] = useState(null);
   const [imageUploadError, setImageUploadError] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [view, setView] = useState("All Items");
+
+  const webcamRef = useRef(null);
+  const [showWebcam, setShowWebcam] = useState(false);
+
+  const captureWebcamImage = useCallback(() => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    setWebcamImage(imageSrc);
+  }, [webcamRef, setWebcamImage]);
 
   useEffect(() => {
     const fetchItems = async () => {
       try {
         const res = await fetch("/api/items/getItems");
         const data = await res.json();
-        const availableItems = data.filter(
-          (item) => item.status === "available"
-        );
+        const availableItems = data.filter((item) => item.status === "available");
         const claimedItems = data.filter((item) => item.status === "claimed");
         setItems(availableItems);
         setClaimedItems(claimedItems);
@@ -121,9 +84,7 @@ export default function DashCrudItems() {
         item.location.toLowerCase().includes(lowerCaseSearchTerm) ||
         item.description.toLowerCase().includes(lowerCaseSearchTerm) ||
         item.department?.toLowerCase().includes(lowerCaseSearchTerm) ||
-        new Date(item.dateFound)
-          .toLocaleDateString()
-          .includes(lowerCaseSearchTerm);
+        new Date(item.dateFound).toLocaleDateString().includes(lowerCaseSearchTerm);
       const matchesCategory = selectedCategory
         ? item.category.toLowerCase() === selectedCategory.toLowerCase()
         : true;
@@ -140,12 +101,8 @@ export default function DashCrudItems() {
       const data = await res.json();
       if (res.ok) {
         setItems((prev) => prev.filter((item) => item._id !== itemIdToDelete));
-        setClaimedItems((prev) =>
-          prev.filter((item) => item._id !== itemIdToDelete)
-        );
-        setFilteredItems((prev) =>
-          prev.filter((item) => item._id !== itemIdToDelete)
-        );
+        setClaimedItems((prev) => prev.filter((item) => item._id !== itemIdToDelete));
+        setFilteredItems((prev) => prev.filter((item) => item._id !== itemIdToDelete));
         setShowModal(false);
         setSuccessMessage("Item deleted successfully.");
         setTimeout(() => setSuccessMessage(""), 3000);
@@ -172,13 +129,9 @@ export default function DashCrudItems() {
           ...prev,
           imageUrls: prev.imageUrls.concat(urls),
         }));
-        setImageUploadProgress(null); // Reset upload progress after success
         setImageUploadError(false);
       } catch (err) {
-        setImageUploadError(
-          "Image upload failed: Each image must be less than 2MB."
-        );
-        setImageUploadProgress(null); // Reset upload progress on error
+        setImageUploadError("Image upload failed: Each image must be less than 2MB.");
       }
     } else {
       setImageUploadError("You can only upload up to 5 images per item.");
@@ -193,12 +146,7 @@ export default function DashCrudItems() {
       const uploadTask = uploadBytesResumable(storageRef, file);
       uploadTask.on(
         "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setImageUploadProgress(progress);
-          console.log(`Upload is ${progress}% done`);
-        },
+        null,
         (error) => {
           console.error("Upload error:", error);
           reject(error);
@@ -217,6 +165,26 @@ export default function DashCrudItems() {
     });
   };
 
+  const uploadWebcamImage = async () => {
+    if (webcamImage && itemToEdit.imageUrls.length < 5) {
+      const blob = await fetch(webcamImage).then((res) => res.blob());
+      const file = new File([blob], "webcam.jpg", { type: "image/jpeg" });
+      try {
+        const url = await storeImage(file);
+        setItemToEdit((prev) => ({
+          ...prev,
+          imageUrls: [...prev.imageUrls, url],
+        }));
+        setWebcamImage(null);
+        setImageUploadError(false);
+      } catch (err) {
+        setImageUploadError("Webcam image upload failed.");
+      }
+    } else {
+      setImageUploadError("You can only upload up to 5 images per item.");
+    }
+  };
+
   const handleRemoveImage = (index) => {
     setItemToEdit((prev) => ({
       ...prev,
@@ -231,9 +199,7 @@ export default function DashCrudItems() {
 
     try {
       const res = await fetch(
-        `/api/items/${
-          itemToEdit._id ? `updateItem/${itemToEdit._id}` : "report"
-        }`,
+        `/api/items/${itemToEdit._id ? `updateItem/${itemToEdit._id}` : "report"}`,
         {
           method: itemToEdit._id ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -246,25 +212,23 @@ export default function DashCrudItems() {
           setClaimedItems((prev) =>
             updatedItem._id
               ? prev.map((item) => (item._id === updatedItem._id ? data : item))
-              : [...prev, data]
+              : [data, ...prev] // Prepend the new item
           );
         } else {
           setItems((prev) =>
             updatedItem._id
               ? prev.map((item) => (item._id === updatedItem._id ? data : item))
-              : [...prev, data]
+              : [data, ...prev] // Prepend the new item
           );
         }
         setFilteredItems((prev) =>
           updatedItem._id
             ? prev.map((item) => (item._id === updatedItem._id ? data : item))
-            : [...prev, data]
+            : [data, ...prev] // Prepend the new item
         );
         setShowAddModal(false);
         setShowEditModal(false);
-        setSuccessMessage(
-          `Item ${updatedItem._id ? "updated" : "added"} successfully.`
-        );
+        setSuccessMessage(`Item ${updatedItem._id ? "updated" : "added"} successfully.`);
         setTimeout(() => setSuccessMessage(""), 3000);
       } else {
         setErrorMessage(data.message);
@@ -313,7 +277,7 @@ export default function DashCrudItems() {
       claimedDate: "",
     });
     setFiles([]);
-    setImageUploadProgress(null);
+    setWebcamImage(null);
     setImageUploadError(false);
   };
 
@@ -387,7 +351,7 @@ export default function DashCrudItems() {
             <Table.HeadCell>Status</Table.HeadCell>
             {view === "Claimed Items" && (
               <Table.HeadCell>Claimant</Table.HeadCell>
-            )}{" "}
+            )}
             {view === "Claimed Items" && (
               <Table.HeadCell>Claimed Date</Table.HeadCell>
             )}
@@ -488,192 +452,423 @@ export default function DashCrudItems() {
 
       {/* Add Item Modal */}
       <Modal
-  show={showEditModal}
-  onClose={() => {
-    setShowEditModal(false);
-    resetModalState();
-  }}
-  size="2xl"
->
-  <Modal.Header>Edit item</Modal.Header>
-  <Modal.Body>
-    <form onSubmit={handleSaveItem}>
-      <div className="grid grid-cols-6 gap-6">
-        <div className="col-span-6 sm:col-span-3">
-          <label
-            htmlFor="item"
-            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-          >
-            Item Name
-          </label>
-          <input
-            type="text"
-            name="item"
-            value={itemToEdit.item}
-            onChange={(e) =>
-              setItemToEdit({ ...itemToEdit, item: e.target.value })
-            }
-            id="item"
-            className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-            placeholder="Item Name"
-            required
-          />
-        </div>
-        <div className="col-span-6 sm:col-span-3">
-          <label
-            htmlFor="dateFound"
-            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-          >
-            Date Found
-          </label>
-          <input
-            type="date"
-            name="dateFound"
-            value={itemToEdit.dateFound}
-            onChange={(e) =>
-              setItemToEdit({ ...itemToEdit, dateFound: e.target.value })
-            }
-            id="dateFound"
-            className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-            required
-          />
-        </div>
-        <div className="col-span-6 sm:col-span-3">
-          <label
-            htmlFor="location"
-            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-          >
-            Location
-          </label>
-          <input
-            type="text"
-            name="location"
-            value={itemToEdit.location}
-            onChange={(e) =>
-              setItemToEdit({ ...itemToEdit, location: e.target.value })
-            }
-            id="location"
-            className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-            placeholder="Location"
-            required
-          />
-        </div>
-        <div className="col-span-6 sm:col-span-3">
-          <label
-            htmlFor="description"
-            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-          >
-            Description
-          </label>
-          <input
-            type="text"
-            name="description"
-            value={itemToEdit.description}
-            onChange={(e) =>
-              setItemToEdit({
-                ...itemToEdit,
-                description: e.target.value,
-              })
-            }
-            id="description"
-            className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-            placeholder="Description"
-            required
-          />
-        </div>
-        <div className="col-span-6 sm:col-span-3">
-          <label
-            htmlFor="category"
-            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-          >
-            Category
-          </label>
-          <select
-            name="category"
-            value={itemToEdit.category}
-            onChange={(e) =>
-              setItemToEdit({ ...itemToEdit, category: e.target.value })
-            }
-            id="category"
-            className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-          >
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="col-span-6">
-          <label
-            htmlFor="imageUrls"
-            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-          >
-            Image URLs
-          </label>
-          <FileInput
-            type="file"
-            id="images"
-            accept="image/*"
-            multiple
-            onChange={(e) => setFiles(Array.from(e.target.files))}
-            disabled={itemToEdit.imageUrls.length >= 5}
-          />
-          <Button
-            type="button"
-            gradientDuoTone="pinkToOrange"
-            onClick={handleImageSubmit}
-            disabled={imageUploadProgress !== null || files.length === 0} // Disable button if no files selected
-            className="mt-2"
-          >
-            {imageUploadProgress
-              ? `Uploading ${imageUploadProgress}%`
-              : "Upload Images"}
-          </Button>
-          {imageUploadError && (
-            <Alert color="failure" className="mt-2">
-              {imageUploadError}
-            </Alert>
-          )}
-          {itemToEdit.imageUrls.length >= 5 && (
-            <Alert color="warning" className="mt-2">
-              Number of images is already at the maximum.
-            </Alert>
-          )}
-          {itemToEdit.imageUrls.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {itemToEdit.imageUrls.map((url, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={url}
-                    alt={`Item ${index + 1}`}
-                    className="w-full h-32 object-cover rounded-lg shadow-md"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white"
-                  >
-                    <HiTrash className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+        show={showAddModal}
+        onClose={() => {
+          setShowAddModal(false);
+          resetModalState();
+        }}
+        size="2xl"
+      >
+        <Modal.Header>Add new item</Modal.Header>
+        <Modal.Body>
+          <form onSubmit={handleSaveItem}>
+            <div className="grid grid-cols-6 gap-6">
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="item"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Item Name
+                </label>
+                <TextInput
+                  type="text"
+                  name="item"
+                  value={itemToEdit.item}
+                  onChange={(e) =>
+                    setItemToEdit({ ...itemToEdit, item: e.target.value })
+                  }
+                  id="item"
+                  placeholder="Item Name"
+                  required
+                />
+              </div>
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="dateFound"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Date Found
+                </label>
+                <TextInput
+                  type="date"
+                  name="dateFound"
+                  value={itemToEdit.dateFound}
+                  onChange={(e) =>
+                    setItemToEdit({ ...itemToEdit, dateFound: e.target.value })
+                  }
+                  id="dateFound"
+                  required
+                />
+              </div>
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="location"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Location
+                </label>
+                <TextInput
+                  type="text"
+                  name="location"
+                  value={itemToEdit.location}
+                  onChange={(e) =>
+                    setItemToEdit({ ...itemToEdit, location: e.target.value })
+                  }
+                  id="location"
+                  placeholder="Location"
+                  required
+                />
+              </div>
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="description"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Description
+                </label>
+                <TextInput
+                  type="text"
+                  name="description"
+                  value={itemToEdit.description}
+                  onChange={(e) =>
+                    setItemToEdit({ ...itemToEdit, description: e.target.value })
+                  }
+                  id="description"
+                  placeholder="Description"
+                  required
+                />
+              </div>
+              <div className="col-span-6 sm:col-span-3">
+                <label
+                  htmlFor="category"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Category
+                </label>
+                <Select
+                  name="category"
+                  value={itemToEdit.category}
+                  onChange={(e) =>
+                    setItemToEdit({ ...itemToEdit, category: e.target.value })
+                  }
+                  id="category"
+                >
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="col-span-6">
+                <label
+                  htmlFor="imageUrls"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Image URLs
+                </label>
+                <FileInput
+                  type="file"
+                  id="images"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => setFiles(Array.from(e.target.files))}
+                  disabled={itemToEdit.imageUrls.length >= 5}
+                />
+                <Button
+                  type="button"
+                  gradientDuoTone="pinkToOrange"
+                  onClick={handleImageSubmit}
+                  disabled={files.length === 0} // Disable button if no files selected
+                  className="mt-2"
+                >
+                  Upload Images
+                </Button>
+                {imageUploadError && (
+                  <Alert color="failure" className="mt-2">
+                    {imageUploadError}
+                  </Alert>
+                )}
+                {itemToEdit.imageUrls.length >= 5 && (
+                  <Alert color="warning" className="mt-2">
+                    Number of images is already at the maximum.
+                  </Alert>
+                )}
+                {itemToEdit.imageUrls.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {itemToEdit.imageUrls.map((url, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={url}
+                          alt={`Item ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg shadow-md"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white"
+                        >
+                          <HiOutlineTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  gradientDuoTone="pinkToOrange"
+                  onClick={() => setShowWebcam((prev) => !prev)}
+                  className="mt-4"
+                >
+                  {showWebcam ? "Close Webcam" : "Open Webcam"}
+                </Button>
+                {showWebcam && (
+                  <div className="mt-4">
+                    <Webcam
+                      audio={false}
+                      ref={webcamRef}
+                      screenshotFormat="image/jpeg"
+                      className="w-full h-64 border-2 border-gray-300 rounded-lg"
+                    />
+                    <div className="mt-2 flex space-x-2">
+                      <Button
+                        type="button"
+                        gradientDuoTone="pinkToOrange"
+                        onClick={captureWebcamImage}
+                      >
+                        Capture Image
+                      </Button>
+                      {webcamImage && (
+                        <Button
+                          type="button"
+                          gradientDuoTone="pinkToOrange"
+                          onClick={uploadWebcamImage}
+                        >
+                          Upload Webcam Image
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {webcamImage && (
+                  <div className="mt-4">
+                    <img
+                      src={webcamImage}
+                      alt="Captured"
+                      className="w-full h-64 object-cover rounded-lg shadow-md"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
-      <div className="mt-6 flex justify-end">
-        <Button
-          type="submit"
-          gradientDuoTone="pinkToOrange"
-          className="w-full sm:w-auto"
-        >
-          Save all
-        </Button>
-      </div>
-    </form>
-  </Modal.Body>
-</Modal>
+            <div className="mt-6 flex justify-end">
+              <Button
+                type="submit"
+                gradientDuoTone="pinkToOrange"
+                className="w-full sm:w-auto"
+              >
+                Save all
+              </Button>
+            </div>
+          </form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Edit Item Modal */}
+      <Modal
+      show={showEditModal}
+      onClose={() => {
+        setShowEditModal(false);
+        resetModalState();
+      }}
+      size="2xl"
+    >
+      <Modal.Header>Edit item</Modal.Header>
+      <Modal.Body>
+        <form onSubmit={handleSaveItem}>
+          <div className="grid grid-cols-6 gap-6">
+            <div className="col-span-6 sm:col-span-3">
+              <label htmlFor="item" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Item Name
+              </label>
+              <TextInput
+                type="text"
+                name="item"
+                value={itemToEdit.item}
+                onChange={(e) => setItemToEdit({ ...itemToEdit, item: e.target.value })}
+                id="item"
+                placeholder="Item Name"
+                required
+              />
+            </div>
+            <div className="col-span-6 sm:col-span-3">
+              <label htmlFor="dateFound" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Date Found
+              </label>
+              <TextInput
+                type="date"
+                name="dateFound"
+                value={itemToEdit.dateFound}
+                onChange={(e) => setItemToEdit({ ...itemToEdit, dateFound: e.target.value })}
+                id="dateFound"
+                required
+              />
+            </div>
+            <div className="col-span-6 sm:col-span-3">
+              <label htmlFor="location" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Location
+              </label>
+              <TextInput
+                type="text"
+                name="location"
+                value={itemToEdit.location}
+                onChange={(e) => setItemToEdit({ ...itemToEdit, location: e.target.value })}
+                id="location"
+                placeholder="Location"
+                required
+              />
+            </div>
+            <div className="col-span-6 sm:col-span-3">
+              <label htmlFor="description" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Description
+              </label>
+              <TextInput
+                type="text"
+                name="description"
+                value={itemToEdit.description}
+                onChange={(e) => setItemToEdit({ ...itemToEdit, description: e.target.value })}
+                id="description"
+                placeholder="Description"
+                required
+              />
+            </div>
+            <div className="col-span-6 sm:col-span-3">
+              <label htmlFor="category" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Category
+              </label>
+              <Select
+                name="category"
+                value={itemToEdit.category}
+                onChange={(e) => setItemToEdit({ ...itemToEdit, category: e.target.value })}
+                id="category"
+              >
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="col-span-6">
+              <label htmlFor="imageUrls" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Image URLs
+              </label>
+              <FileInput
+                type="file"
+                id="images"
+                accept="image/*"
+                multiple
+                onChange={(e) => setFiles(Array.from(e.target.files))}
+                disabled={itemToEdit.imageUrls.length >= 5}
+              />
+              <Button
+                type="button"
+                gradientDuoTone="pinkToOrange"
+                onClick={handleImageSubmit}
+                disabled={files.length === 0} // Disable button if no files selected
+                className="mt-2"
+              >
+                Upload Images
+              </Button>
+              {imageUploadError && (
+                <Alert color="failure" className="mt-2">
+                  {imageUploadError}
+                </Alert>
+              )}
+              {itemToEdit.imageUrls.length >= 5 && (
+                <Alert color="warning" className="mt-2">
+                  Number of images is already at the maximum.
+                </Alert>
+              )}
+              {itemToEdit.imageUrls.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {itemToEdit.imageUrls.map((url, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={url}
+                        alt={`Item ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg shadow-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white"
+                      >
+                        <HiOutlineTrash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button
+                type="button"
+                gradientDuoTone="pinkToOrange"
+                onClick={() => setShowWebcam((prev) => !prev)}
+                className="mt-4"
+              >
+                {showWebcam ? "Close Webcam" : "Open Webcam"}
+              </Button>
+              {showWebcam && (
+                <div className="mt-4">
+                  <Webcam
+                    audio={false}
+                    ref={webcamRef}
+                    screenshotFormat="image/jpeg"
+                    className="w-full h-64 border-2 border-gray-300 rounded-lg"
+                  />
+                  <div className="mt-2 flex space-x-2">
+                    <Button
+                      type="button"
+                      gradientDuoTone="pinkToOrange"
+                      onClick={captureWebcamImage}
+                    >
+                      Capture Image
+                    </Button>
+                    {webcamImage && (
+                      <Button
+                        type="button"
+                        gradientDuoTone="pinkToOrange"
+                        onClick={uploadWebcamImage}
+                      >
+                        Upload Webcam Image
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+              {webcamImage && (
+                <div className="mt-4">
+                  <img
+                    src={webcamImage}
+                    alt="Captured"
+                    className="w-full h-64 object-cover rounded-lg shadow-md"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="mt-6 flex justify-end">
+            <Button
+              type="submit"
+              gradientDuoTone="pinkToOrange"
+              className="w-full sm:w-auto"
+            >
+              Save all
+            </Button>
+          </div>
+        </form>
+      </Modal.Body>
+    </Modal>
     </div>
   );
 }
