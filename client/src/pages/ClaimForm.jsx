@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { TextInput, Button, Datepicker, Alert } from "flowbite-react";
+import { TextInput, Button, Alert } from "flowbite-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { HiCheck } from "react-icons/hi";
 
@@ -71,10 +73,12 @@ export default function ClaimForm() {
           className="w-full"
           onChange={handleChange}
         />
-        <Datepicker
+        <DatePicker
           selected={formData.date}
           onChange={handleDateChange}
           required
+          maxDate={new Date()}
+          className="w-full p-2.5 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         />
         <Button type="submit" gradientDuoTone="cyanToBlue">
           Confirm
