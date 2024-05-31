@@ -3,9 +3,7 @@ import { useSelector } from "react-redux";
 import { Modal, Table, Button, TextInput, Select, Toast } from "flowbite-react";
 import {
   HiOutlineExclamationCircle,
-  HiSearch,
   HiTrash,
-  HiDotsVertical,
   HiDownload,
   HiPlus,
   HiPencilAlt,
@@ -13,12 +11,14 @@ import {
   HiXCircle,
 } from "react-icons/hi";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { AiOutlineSearch } from "react-icons/ai";
 
 const departments = ["SSG", "SSO", "SSD"];
 
 export default function DashUsers() {
   const { currentUser } = useSelector((state) => state.user);
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [showMore, setShowMore] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [userIdToDelete, setUserIdToDelete] = useState("");
@@ -41,11 +41,14 @@ export default function DashUsers() {
   const [addSuccessMessage, setAddSuccessMessage] = useState("");
   const [editErrorMessage, setEditErrorMessage] = useState("");
   const [editSuccessMessage, setEditSuccessMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`/api/user/getusers`);
+        const res = await fetch(
+          `/api/user/getusers?excludeUserId=${currentUser._id}`
+        );
         const data = await res.json();
         if (res.ok) {
           setUsers(data.users);
@@ -60,12 +63,30 @@ export default function DashUsers() {
     if (["admin", "superAdmin"].includes(currentUser.role)) {
       fetchUsers();
     }
-  }, [currentUser._id]);
+  }, [currentUser._id, currentUser.role]);
+
+  useEffect(() => {
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    const filtered = users.filter((user) => {
+      const matchesName =
+        user.firstname.toLowerCase().includes(lowerCaseSearchTerm) ||
+        user.lastname.toLowerCase().includes(lowerCaseSearchTerm) ||
+        user.middlename.toLowerCase().includes(lowerCaseSearchTerm);
+      const matchesDepartment = user.department
+        .toLowerCase()
+        .includes(lowerCaseSearchTerm);
+      const matchesRole = user.role.toLowerCase().includes(lowerCaseSearchTerm);
+      return matchesName || matchesDepartment || matchesRole;
+    });
+    setFilteredUsers(filtered);
+  }, [searchTerm, users]);
 
   const handleShowMore = async () => {
     const startIndex = users.length;
     try {
-      const res = await fetch(`/api/user/getusers?startIndex=${startIndex}`);
+      const res = await fetch(
+        `/api/user/getusers?startIndex=${startIndex}&excludeUserId=${currentUser._id}`
+      );
       const data = await res.json();
       if (res.ok) {
         setUsers((prev) => [...prev, ...data.users]);
@@ -101,6 +122,10 @@ export default function DashUsers() {
     }
   };
 
+  const checkSuperAdminExists = () => {
+    return users.some((user) => user.role === "superAdmin");
+  };
+
   const handleSaveEditUser = async () => {
     if (currentUser.role !== "superAdmin" && userToEdit.role === "superAdmin") {
       setEditErrorMessage("Only superAdmins can assign the superAdmin role.");
@@ -112,6 +137,11 @@ export default function DashUsers() {
       (userToEdit.role === "superAdmin" || userToEdit.role === "admin")
     ) {
       setEditErrorMessage("Admins cannot assign admin or superAdmin roles.");
+      return;
+    }
+
+    if (userToEdit.role === "superAdmin" && checkSuperAdminExists()) {
+      setEditErrorMessage("There can only be one superAdmin.");
       return;
     }
 
@@ -157,6 +187,11 @@ export default function DashUsers() {
       (userToEdit.role === "superAdmin" || userToEdit.role === "admin")
     ) {
       setAddErrorMessage("Admins cannot assign admin or superAdmin roles.");
+      return;
+    }
+
+    if (userToEdit.role === "superAdmin" && checkSuperAdminExists()) {
+      setAddErrorMessage("There can only be one superAdmin.");
       return;
     }
 
@@ -216,7 +251,7 @@ export default function DashUsers() {
   };
 
   return (
-    <div className="container mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
+    <div className="container mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500 overflow-x-auto">
       {successMessage && (
         <Toast className="fixed top-4 right-4 z-50">
           <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-500 dark:bg-green-800 dark:text-green-200">
@@ -235,45 +270,31 @@ export default function DashUsers() {
           <Toast.Toggle />
         </Toast>
       )}
-
-      <div className="p-3 w-full overflow-x-auto flex-1">
+      <div className="p-3 w-full overflow-x-auto flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white">
           All Users
         </h1>
       </div>
-      <div className="sm:flex mb-4">
-        <div className="items-center hidden mb-3 sm:flex sm:divide-x sm:divide-gray-100 sm:mb-0 dark:divide-gray-700">
-          <form className="lg:pr-3" action="#" method="GET">
-            <label htmlFor="items-search" className="sr-only">
-              Search
-            </label>
-            <div className="relative mt-1 lg:w-64 xl:w-96">
-              <HiSearch className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                name="search"
-                id="items-search"
-                className="pl-10 bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                placeholder="Search for Users"
-              />
-            </div>
-          </form>
-          <div className="flex pl-0 mt-3 space-x-1 sm:pl-2 sm:mt-0">
-            <button className="inline-flex justify-center p-1 text-gray-500 rounded cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
-              <HiDotsVertical className="w-6 h-6" />
-            </button>
-          </div>
+
+      <div className="mb-4 w-full flex items-center justify-between">
+        <div className="flex-grow mr-4">
+          <TextInput
+            type="text"
+            placeholder="Search by name, department, or role..."
+            rightIcon={AiOutlineSearch}
+            className="w-full sm:w-96"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <div className="flex items-center ml-auto space-x-2 sm:space-x-3">
-          <Button onClick={handleAddUserModal} color="blue">
-            <HiPlus className="w-5 h-5 mr-2 -ml-1" />
-            Add user
-          </Button>
-          <Button color="gray">
-            <HiDownload className="w-5 h-5 mr-2 -ml-1" />
-            Export
-          </Button>
-        </div>
+        <Button
+          onClick={handleAddUserModal}
+          color="blue"
+          className="flex items-center"
+        >
+          <HiPlus className="w-5 h-5 mr-2 -ml-1" />
+          Add user
+        </Button>
       </div>
       <div className="overflow-x-auto">
         <Table
@@ -289,7 +310,7 @@ export default function DashUsers() {
             <Table.HeadCell>Actions</Table.HeadCell>
           </Table.Head>
           <Table.Body className="bg-white divide-y dark:divide-gray-700 dark:bg-gray-800">
-            {users.map((user) => (
+            {filteredUsers.map((user) => (
               <Table.Row
                 key={user._id}
                 className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600"
@@ -303,10 +324,7 @@ export default function DashUsers() {
                     />
                     <div className="ml-4">
                       <div className="text-base font-semibold text-gray-900 dark:text-white">
-                        {user.firstname} {user.lastname}
-                      </div>
-                      <div className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                        {user.middlename}
+                        {user.firstname} {user.middlename} {user.lastname}
                       </div>
                     </div>
                   </div>
@@ -466,19 +484,22 @@ export default function DashUsers() {
                 >
                   Department
                 </label>
-                <Select
-                  id="department"
-                  value={userToEdit.department}
-                  onChange={(e) =>
-                    setUserToEdit({ ...userToEdit, department: e.target.value })
-                  }
-                >
-                  {departments.map((department) => (
-                    <option key={department} value={department}>
-                      {department}
-                    </option>
+                <div className="flex space-x-4">
+                  {departments.map((dept) => (
+                    <label key={dept} className="flex items-center">
+                      <input
+                        type="radio"
+                        id="department"
+                        name="department"
+                        value={dept}
+                        checked={userToEdit.department === dept}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">{dept}</span>
+                    </label>
                   ))}
-                </Select>
+                </div>
               </div>
               <div className="col-span-6 sm:col-span-3">
                 <label
@@ -510,17 +531,32 @@ export default function DashUsers() {
                   >
                     Role
                   </label>
-                  <Select
-                    id="role"
-                    value={userToEdit.role}
-                    onChange={(e) =>
-                      setUserToEdit({ ...userToEdit, role: e.target.value })
-                    }
-                  >
-                    <option value="superAdmin">Super Admin</option>
-                    <option value="admin">Admin</option>
-                    <option value="staff">Staff</option>
-                  </Select>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        id="role"
+                        name="role"
+                        value="admin"
+                        checked={userToEdit.role === "admin"}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">Admin</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        id="role"
+                        name="role"
+                        value="staff"
+                        checked={userToEdit.role === "staff"}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">Staff</span>
+                    </label>
+                  </div>
                 </div>
               )}
             </div>
@@ -640,19 +676,22 @@ export default function DashUsers() {
                 >
                   Department
                 </label>
-                <Select
-                  id="department"
-                  value={userToEdit.department}
-                  onChange={(e) =>
-                    setUserToEdit({ ...userToEdit, department: e.target.value })
-                  }
-                >
-                  {departments.map((department) => (
-                    <option key={department} value={department}>
-                      {department}
-                    </option>
+                <div className="flex space-x-4">
+                  {departments.map((dept) => (
+                    <label key={dept} className="flex items-center">
+                      <input
+                        type="radio"
+                        id="department"
+                        name="department"
+                        value={dept}
+                        checked={userToEdit.department === dept}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">{dept}</span>
+                    </label>
                   ))}
-                </Select>
+                </div>
               </div>
               <div className="col-span-6 sm:col-span-3">
                 <label
@@ -684,17 +723,32 @@ export default function DashUsers() {
                   >
                     Role
                   </label>
-                  <Select
-                    id="role"
-                    value={userToEdit.role}
-                    onChange={(e) =>
-                      setUserToEdit({ ...userToEdit, role: e.target.value })
-                    }
-                  >
-                    <option value="superAdmin">Super Admin</option>
-                    <option value="admin">Admin</option>
-                    <option value="staff">Staff</option>
-                  </Select>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        id="role"
+                        name="role"
+                        value="admin"
+                        checked={userToEdit.role === "admin"}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">Admin</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        id="role"
+                        name="role"
+                        value="staff"
+                        checked={userToEdit.role === "staff"}
+                        onChange={handleChange}
+                        className="form-radio"
+                      />
+                      <span className="ml-2">Staff</span>
+                    </label>
+                  </div>
                 </div>
               )}
             </div>

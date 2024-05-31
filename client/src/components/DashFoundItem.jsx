@@ -1,8 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import { TextInput, Select } from "flowbite-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AiOutlineSearch } from "react-icons/ai";
+import {
+  AiOutlineSearch,
+  AiOutlineCalendar,
+  AiOutlineClose,
+} from "react-icons/ai";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const categories = [
   "Mobile Phones",
@@ -41,12 +47,15 @@ const categories = [
 export default function DashFoundItem() {
   const { currentUser } = useSelector((state) => state.user);
   const [items, setItems] = useState([]);
-  // const [showMore, setShowMore] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredItems, setFilteredItems] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(""); // State for selected category
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [showDateRange, setShowDateRange] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const dateRangeRef = useRef();
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -56,7 +65,7 @@ export default function DashFoundItem() {
         );
         const data = await res.json();
         setItems(data);
-        setFilteredItems(data); // Initialize filteredItems with all items
+        setFilteredItems(data);
         console.log("Fetched items:", data);
       } catch (error) {
         console.error("Error fetching items:", error);
@@ -66,20 +75,15 @@ export default function DashFoundItem() {
     fetchItems();
   }, [currentUser._id]);
 
-  /*const handleShowMore = async () => {
-    const res = await fetch(
-      `/api/items/getItems?userId=${currentUser._id}&startIndex=${items.length}`
-    );
-    const data = await res.json();
-    if (data.length < 12) {
-      setShowMore(false);
-    }
-    setItems((prevItems) => [...prevItems, ...data]);
-  }; */
-
-  // Update filtered items based on search term and selected category
   useEffect(() => {
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+    const addOneDay = (date) => {
+      const result = new Date(date);
+      result.setDate(result.getDate() + 1);
+      return result;
+    };
+
     const filtered = items.filter((item) => {
       const matchesSearchTerm =
         item.item.toLowerCase().includes(lowerCaseSearchTerm) ||
@@ -92,12 +96,15 @@ export default function DashFoundItem() {
       const matchesCategory = selectedCategory
         ? item.category.toLowerCase() === selectedCategory.toLowerCase()
         : true;
-      return matchesSearchTerm && matchesCategory;
+      const matchesDateRange =
+        (!startDate || new Date(item.dateFound) >= startDate) &&
+        (!endDate || new Date(item.dateFound) < addOneDay(endDate));
+      return matchesSearchTerm && matchesCategory && matchesDateRange;
     });
+
     console.log("Filtered items:", filtered);
     setFilteredItems(filtered);
-    // setShowMore(filtered.length >= 12);
-  }, [searchTerm, selectedCategory, items]);
+  }, [searchTerm, selectedCategory, startDate, endDate, items]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -115,9 +122,18 @@ export default function DashFoundItem() {
     //  navigate(`/search?${searchQuery}`);
   };
 
+  const clearDateRange = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setShowDateRange(false);
+  };
+
   return (
     <div className="flex flex-col min-h-screen w-screen p-4">
-      <form onSubmit={handleSubmit} className="w-full mb-4 flex space-x-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full mb-4 flex flex-col md:flex-row md:space-x-4 space-y-2 md:space-y-0"
+      >
         <TextInput
           type="text"
           placeholder="Search..."
@@ -127,7 +143,7 @@ export default function DashFoundItem() {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <Select
-          className="w-1/3"
+          className="w-full md:w-1/3"
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
         >
@@ -138,6 +154,50 @@ export default function DashFoundItem() {
             </option>
           ))}
         </Select>
+        <div className="relative w-full md:w-1/3">
+          <button
+            type="button"
+            className="w-full flex justify-between items-center bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2"
+            onClick={() => setShowDateRange(!showDateRange)}
+          >
+            <span>Sort By Date</span>
+            <AiOutlineCalendar />
+          </button>
+          {showDateRange && (
+            <div
+              ref={dateRangeRef}
+              className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg z-10"
+            >
+              <div className="p-4 space-y-2 relative">
+                <button
+                  type="button"
+                  className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  onClick={clearDateRange}
+                >
+                  <AiOutlineClose />
+                </button>
+                <DatePicker
+                  selected={startDate}
+                  onChange={(date) => setStartDate(date)}
+                  selectsStart
+                  startDate={startDate}
+                  endDate={endDate}
+                  placeholderText="From Date"
+                  className="w-full p-2 mt-3 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                />
+                <DatePicker
+                  selected={endDate}
+                  onChange={(date) => setEndDate(date)}
+                  selectsEnd
+                  startDate={startDate}
+                  endDate={endDate}
+                  placeholderText="To Date"
+                  className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </form>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {filteredItems.map((item) => (

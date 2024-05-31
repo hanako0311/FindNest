@@ -11,7 +11,9 @@ export default {
     },
   },
   plugins: [
-    flowbite.plugin(),
+    flowbite.plugin({
+      charts: true,
+    }),
     require("tailwind-scrollbar"),
     require("@tailwindcss/aspect-ratio"),
   ],

@@ -1,73 +1,30 @@
-import { Table } from "flowbite-react";
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { Pie, Line } from "react-chartjs-2";
+import ReactApexChart from "react-apexcharts";
+import { Button, Table } from "flowbite-react";
 import {
-  ArcElement,
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement
-);
-
-const categories = [
-  "Mobile Phones",
-  "Laptops/Tablets",
-  "Headphones/Earbuds",
-  "Chargers and Cables",
-  "Cameras",
-  "Electronic Accessories",
-  "Textbooks",
-  "Notebooks",
-  "Stationery Items",
-  "Art Supplies",
-  "Calculators",
-  "Coats and Jackets",
-  "Hats and Caps",
-  "Scarves and Gloves",
-  "Bags and Backpacks",
-  "Sunglasses",
-  "Jewelry and Watches",
-  "Umbrellas",
-  "Wallets and Purses",
-  "ID Cards and Passports",
-  "Keys",
-  "Personal Care Items",
-  "Sports Gear",
-  "Gym Equipment",
-  "Bicycles and Skateboards",
-  "Musical Instruments",
-  "Water Bottles",
-  "Lunch Boxes",
-  "Toys and Games",
-  "Decorative Items",
-  "Other",
-];
+  HiArrowNarrowUp,
+  HiDocumentText,
+  HiOutlineUserGroup,
+  HiClipboardList,
+} from "react-icons/hi";
+import Papa from "papaparse";
+import fileDownload from "js-file-download";
 
 export default function DashAnalytics() {
   const [totalItemsReported, setTotalItemsReported] = useState(0);
   const [itemsClaimed, setItemsClaimed] = useState(0);
   const [itemsPending, setItemsPending] = useState(0);
+  const [users, setUsers] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [lastMonthUsers, setLastMonthUsers] = useState(0);
   const currentUser = useSelector((state) => state.user.currentUser);
   const [itemsFoundCount, setItemsFoundCount] = useState(Array(7).fill(0));
   const [itemsClaimedCount, setItemsClaimedCount] = useState(Array(7).fill(0));
   const [items, setItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [recentFoundItems, setRecentFoundItems] = useState([]);
+  const [recentClaimedItems, setRecentClaimedItems] = useState([]);
 
   const fetchItems = async () => {
     try {
@@ -79,9 +36,8 @@ export default function DashAnalytics() {
       const foundCounts = Array(7).fill(0);
       const claimedCounts = Array(7).fill(0);
 
-      let totalItemsReported = 0;
-      let itemsClaimed = 0;
-      let itemsPending = 0;
+      const recentFound = [];
+      const recentClaimed = [];
 
       fetchedItems.forEach((item) => {
         const createdAt = new Date(item.createdAt);
@@ -90,6 +46,9 @@ export default function DashAnalytics() {
         );
         if (daysAgoFound < 7) {
           foundCounts[daysAgoFound]++;
+          if (recentFound.length < 5) {
+            recentFound.push(item);
+          }
         }
 
         if (item.status === "claimed" && item.claimedDate) {
@@ -99,11 +58,15 @@ export default function DashAnalytics() {
           );
           if (daysAgoClaimed < 7) {
             claimedCounts[daysAgoClaimed]++;
+            if (recentClaimed.length < 5) {
+              recentClaimed.push(item);
+            }
           }
         }
 
         modifiedItems.push({
           ...item,
+          key: `${item._id}-Found`,
           action: "Found",
           displayDate: new Date(item.createdAt).toLocaleDateString(),
           displayTime: new Date(item.createdAt).toLocaleTimeString([], {
@@ -113,11 +76,10 @@ export default function DashAnalytics() {
           sortDate: new Date(item.createdAt),
         });
 
-        totalItemsReported++;
-        itemsPending++;
         if (item.status === "claimed" && item.claimedDate) {
           modifiedItems.push({
             ...item,
+            key: `${item._id}-Claimed`,
             action: "Claimed",
             displayDate: new Date(item.claimedDate).toLocaleDateString(),
             displayTime: new Date(item.claimedDate).toLocaleTimeString([], {
@@ -126,194 +88,282 @@ export default function DashAnalytics() {
             }),
             sortDate: new Date(item.claimedDate),
           });
-          itemsClaimed++;
-          itemsPending--;
         }
       });
 
-      setTotalItemsReported(totalItemsReported);
-      setItemsClaimed(itemsClaimed);
-      setItemsPending(itemsPending);
       setItems(modifiedItems.sort((a, b) => b.sortDate - a.sortDate));
       setItemsFoundCount(foundCounts.reverse());
       setItemsClaimedCount(claimedCounts.reverse());
+      setTotalItemsReported(fetchedItems.length);
+      setItemsClaimed(getCount(fetchedItems, "claimed"));
+      setItemsPending(getCount(fetchedItems, "available"));
+      setRecentFoundItems(recentFound);
+      setRecentClaimedItems(recentClaimed);
     } catch (error) {
       console.error("Failed to fetch items:", error);
     }
   };
 
-  useEffect(() => {
-    const foundCounts = Array(7).fill(0);
-    const claimedCounts = Array(7).fill(0);
-    const now = new Date();
-
-    items.forEach((item) => {
-      const createdAt = new Date(item.createdAt);
-      const daysAgoFound = Math.floor(
-        (now - createdAt) / (1000 * 60 * 60 * 24)
-      );
-      if (daysAgoFound < 7) {
-        foundCounts[daysAgoFound]++;
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch("/api/user/getusers?limit=5");
+      const data = await res.json();
+      if (res.ok) {
+        setUsers(data.users);
+        setTotalUsers(data.totalUsers);
+        setLastMonthUsers(data.lastMonthUsers);
       }
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    }
+  };
 
-      if (item.status === "claimed" && item.claimedDate) {
-        const claimedDate = new Date(item.claimedDate);
-        const daysAgoClaimed = Math.floor(
-          (now - claimedDate) / (1000 * 60 * 60 * 24)
-        );
-        if (daysAgoClaimed < 7) {
-          claimedCounts[daysAgoClaimed]++;
-        }
-      }
-    });
+  const getCount = (items, status) =>
+    items.filter((item) => item.status === status).length;
 
-    setItemsFoundCount(foundCounts.reverse());
-    setItemsClaimedCount(claimedCounts.reverse());
-  }, [items]);
+  const generateReport = () => {
+    try {
+      const data = items.map((item) => ({
+        Item: item.item,
+        DateFound: item.displayDate,
+        Location: item.location,
+        Description: item.description,
+        Category: item.category,
+        Status: item.action,
+        ClaimantName: item.claimantName || "N/A",
+        ClaimedDate: item.claimedDate
+          ? new Date(item.claimedDate).toISOString().split("T")[0]
+          : "N/A",
+      }));
 
-  useEffect(() => {
-    const filtered = items.filter((item) => {
-      const matchesCategory = selectedCategory
-        ? item.category === selectedCategory
-        : true;
-      return matchesCategory;
-    });
-    setFilteredItems(filtered);
-  }, [selectedCategory, items]);
+      const csv = Papa.unparse(data);
+
+      fileDownload(csv, "found_items_report.csv");
+    } catch (error) {
+      console.error("Error generating report:", error.message);
+    }
+  };
 
   useEffect(() => {
     if (currentUser && currentUser._id) {
       fetchItems();
+      if (currentUser.role === "admin" || currentUser.role === "superAdmin") {
+        fetchUsers();
+      }
     }
-  }, [currentUser._id]);
+  }, [currentUser]);
 
-  const data = {
-    labels: ["Items Claimed", "Unclaimed Items"],
-    datasets: [
-      {
-        label: "Item Status",
-        data: [itemsClaimed, itemsPending],
-        backgroundColor: ["rgba(14, 159, 110, 0.8)", "rgba(231, 33, 33, 0.8)"],
-        borderColor: ["rgba(14, 159, 110, 0.8)", "rgba(231, 33, 33, 0.8)"],
-        borderWidth: 1,
-      },
-    ],
-  };
-  const options = {
-    plugins: {
+  const pieChartData = {
+    series: [itemsClaimed, itemsPending],
+    options: {
+      labels: ["Items Claimed", "Unclaimed Items"],
+      colors: ["#0e9f6e", "#e72121"],
       legend: {
-        display: true,
         position: "bottom",
       },
     },
   };
 
-  const lineGraphData = {
-    labels: [
-      "6 days ago",
-      "5 days ago",
-      "4 days ago",
-      "3 days ago",
-      "2 days ago",
-      "Yesterday",
-      "Today",
-    ],
-    datasets: [
+  const lineChartData = {
+    series: [
       {
-        label: "Items Found",
+        name: "Items Found",
         data: itemsFoundCount,
-        borderColor: "rgb(53, 162, 235)",
-        backgroundColor: "rgba(53, 162, 235, 0.5)",
       },
       {
-        label: "Items Claimed",
+        name: "Items Claimed",
         data: itemsClaimedCount,
-        borderColor: "rgb(255, 99, 132)",
-        backgroundColor: "rgba(255, 99, 132, 0.5)",
       },
     ],
-  };
-
-  const lineGraphOptions = {
-    scales: {
-      y: {
-        beginAtZero: true,
+    options: {
+      chart: {
+        type: "line",
       },
-      x: {
-        ticks: {
-          fontSize: 16,
-        },
-      },
-    },
-    elements: {
-      point: {
-        radius: 5,
-      },
-      line: {
-        borderWidth: 3,
-      },
-    },
-    plugins: {
-      legend: {
-        labels: {
-          fontSize: 14,
-        },
-      },
-      title: {
-        display: true,
-        text: "Items Found vs. Items Claimed Over the Past Week",
-        font: {
-          size: 18,
-        },
+      xaxis: {
+        categories: [
+          "6 days ago",
+          "5 days ago",
+          "4 days ago",
+          "3 days ago",
+          "2 days ago",
+          "Yesterday",
+          "Today",
+        ],
       },
     },
   };
 
   return (
-    <div className="p-4 bg-white dark:bg-gray-900 shadow-lg rounded-lg">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-700 dark:text-gray-300 mb-4">
+    <div className="p-6 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-300 min-h-screen w-full overflow-x-auto">
+      <div className="mb-1">
+        <h1 className="text-3xl font-bold mb-6 text-start ">
           Dashboard Analytics
         </h1>
-        <div className="flex flex-wrap justify-around items-center mb-4">
-          <div className="flex flex-col p-3 bg-blue-500 dark:bg-blue-700 gap-4 md:w-72 w-full rounded-md shadow-md text-white">
-            Total Items Reported:{" "}
-            <span className="font-semibold">{totalItemsReported}</span>
+        <div className="flex flex-wrap gap-4 py-3 mx-auto justify-center">
+          <div className="flex flex-col p-6 bg-green-500 gap-4 md:w-72 w-full rounded-lg shadow-lg text-white">
+            <div className="flex justify-between">
+              <div>
+                <h3 className="text-white text-md uppercase">Total Users</h3>
+                <p className="text-3xl font-semibold">{totalUsers}</p>
+              </div>
+              <HiOutlineUserGroup className="text-white text-5xl p-2" />
+            </div>
+            <div className="flex justify-between">
+              <span className="text-green-200 flex items-center">
+                <HiArrowNarrowUp />
+                {lastMonthUsers}
+              </span>
+              <div className="text-gray-200">Last month</div>
+            </div>
           </div>
-          <div className="flex flex-col p-3 bg-green-500 dark:bg-green-700 gap-4 md:w-72 w-full rounded-md shadow-md text-white">
-            Items Successfully Claimed:{" "}
-            <span className="font-semibold">{itemsClaimed}</span>
+          <div className="flex flex-col p-6 bg-yellow-500 gap-4 md:w-72 w-full rounded-lg shadow-lg text-white">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-white text-md uppercase">Total Items</h3>
+                <p className="text-3xl font-semibold">{totalItemsReported}</p>
+              </div>
+              <HiDocumentText className="text-white text-5xl p-2" />
+            </div>
+            <div className="flex justify-between">
+              <span className="text-green-200 flex items-center">
+                <HiArrowNarrowUp />
+                {itemsClaimed}
+              </span>
+              <div className="text-gray-200">Items Claimed</div>
+            </div>
           </div>
-          <div className="flex flex-col p-3 bg-red-800 dark:bg-red-900 gap-4 md:w-72 w-full rounded-md shadow-md text-white">
-            Unclaimed Items:{" "}
-            <span className="font-semibold">{itemsPending}</span>
+          <div className="flex flex-col p-6 bg-red-500 gap-4 md:w-72 w-full rounded-lg shadow-lg text-white">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-white text-md uppercase">
+                  Unclaimed Items
+                </h3>
+                <p className="text-3xl font-semibold">{itemsPending}</p>
+              </div>
+              <HiClipboardList className="text-white text-5xl p-2" />
+            </div>
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap justify-around items-center mb-4">
-        <div className="p-3 dark:bg-slate-800 gap-4 md:w-1/3 w-full rounded-md shadow-md text-white flex justify-center items-center">
-          <div className="w-full md:w-72 p-5 flex justify-center items-center">
-            <div style={{ width: "100%", height: "auto", minHeight: "230px" }}>
-              <Pie data={data} options={options} />
-            </div>
-          </div>
+      <div className="flex flex-wrap gap-4 py-3 mx-auto justify-center">
+        <div className="flex flex-col w-full md:w-auto shadow-md p-2 rounded-md dark:bg-gray-800 ">
+          <ReactApexChart
+            options={pieChartData.options}
+            series={pieChartData.series}
+            type="pie"
+            width="100%"
+            height="100%"
+          />
         </div>
-        <div className="p-3 dark:bg-slate-800 gap-4 md:w-2/3 w-full rounded-md shadow-md text-white flex justify-center items-center">
-          <div className="w-full p-2 flex justify-center items-center">
-            <div
-              className="flex justify-center items-center"
-              style={{ width: "100%", height: "auto", minHeight: "230px" }}
-            >
-              <Line data={lineGraphData} options={lineGraphOptions} />
-            </div>
+        <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full md:w-1/2 h-96">
+          <ReactApexChart
+            options={lineChartData.options}
+            series={lineChartData.series}
+            type="line"
+            width="100%"
+            height="100%"
+          />
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-4 py-3 mx-auto justify-center">
+        <div className="flex flex-col w-full md:w-auto shadow-md p-2 rounded-md dark:bg-gray-800">
+          <div className="flex justify-between p-3 text-sm font-semibold">
+            <h1 className="text-center p-2">Recent Found Items</h1>
+            <Button outline gradientDuoTone="purpleToPink">
+              <Link to={"/dashboard?tab=found-items"}>See all</Link>
+            </Button>
           </div>
+          <Table hoverable>
+            <Table.Head>
+              <Table.HeadCell>Image</Table.HeadCell>
+              <Table.HeadCell>Name</Table.HeadCell>
+              <Table.HeadCell>Date</Table.HeadCell>
+            </Table.Head>
+            <Table.Body className="divide-y">
+              {recentFoundItems.map((item) => (
+                <Table.Row
+                  key={item._id}
+                  className="bg-white dark:border-gray-700 dark:bg-gray-800"
+                >
+                  <Table.Cell>
+                    <img
+                      src={item.imageUrls[0]}
+                      alt="item"
+                      className="w-10 h-10 rounded-full bg-gray-500"
+                      onError={(e) => {
+                        e.target.onError = null;
+                        e.target.src = "default-image.png";
+                      }}
+                    />
+                  </Table.Cell>
+                  <Table.Cell>{item.item}</Table.Cell>
+                  <Table.Cell>
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
+        </div>
+        <div className="flex flex-col w-full md:w-auto shadow-md p-2 rounded-md dark:bg-gray-800">
+          <div className="flex justify-between p-3 text-sm font-semibold">
+            <h1 className="text-center p-2">Recent Claimed Items</h1>
+            <Button outline gradientDuoTone="purpleToPink">
+              <Link to={"/dashboard?tab=crud-items"}>See all</Link>
+            </Button>
+          </div>
+          <Table hoverable>
+            <Table.Head>
+              <Table.HeadCell>Image</Table.HeadCell>
+              <Table.HeadCell>Name</Table.HeadCell>
+              <Table.HeadCell>Date</Table.HeadCell>
+            </Table.Head>
+            <Table.Body className="divide-y">
+              {recentClaimedItems.map((item) => (
+                <Table.Row
+                  key={item._id}
+                  className="bg-white dark:border-gray-700 dark:bg-gray-800"
+                >
+                  <Table.Cell>
+                    <img
+                      src={item.imageUrls[0]}
+                      alt="item"
+                      className="w-10 h-10 rounded-full bg-gray-500"
+                      onError={(e) => {
+                        e.target.onError = null;
+                        e.target.src = "default-image.png";
+                      }}
+                    />
+                  </Table.Cell>
+                  <Table.Cell>{item.item}</Table.Cell>
+                  <Table.Cell>
+                    {new Date(item.claimedDate).toLocaleDateString()}
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
         </div>
       </div>
       <div className="mx-auto p-3 w-full overflow-x-auto">
         <br />
-        <h1 className="text-3xl font-bold text-gray-700 dark:text-gray-300 mb-4">
-          Audit Logs
-        </h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold text-gray-700 dark:text-gray-300 mb-4">
+            Audit Logs
+          </h1>
+          <div className="flex justify-end mb-4">
+            {currentUser.department === "SSO" &&
+              currentUser.role === "admin" && (
+                <button
+                  onClick={generateReport}
+                  className="bg-red-900 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                >
+                  Download Report
+                </button>
+              )}
+          </div>
+        </div>
+        <br></br>
         <Table
           hoverable
           className="min-w-full text-sm text-left text-gray-500 dark:text-gray-400"
@@ -331,7 +381,7 @@ export default function DashAnalytics() {
           <Table.Body className="bg-white divide-y dark:divide-gray-700 dark:bg-gray-800">
             {items.map((item) => (
               <Table.Row
-                key={item._id}
+                key={item.key}
                 className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600"
               >
                 <Table.Cell className="px-6 py-4">{item.action}</Table.Cell>
