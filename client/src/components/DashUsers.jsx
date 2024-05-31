@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Modal, Table, Button, TextInput, Select, Toast } from "flowbite-react";
+import { Modal, Table, Button, TextInput, Toast } from "flowbite-react";
 import {
   HiOutlineExclamationCircle,
   HiTrash,
@@ -158,7 +158,6 @@ export default function DashUsers() {
         setUsers((prev) =>
           prev.map((user) => (user._id === userToEdit._id ? data : user))
         );
-        setShowEditModal(false);
         setEditSuccessMessage("User updated successfully.");
         setTimeout(() => {
           setEditSuccessMessage("");
@@ -205,7 +204,7 @@ export default function DashUsers() {
       });
       const data = await res.json();
       if (res.ok) {
-        setUsers((prev) => [...prev, data]);
+        setUsers((prev) => [...prev, data.user]);
         setAddSuccessMessage("User added successfully.");
         setTimeout(() => {
           setAddSuccessMessage("");

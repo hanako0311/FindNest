@@ -74,17 +74,16 @@ export default function SignIn() {
                 onChange={handleChange}
               />
             </div>
-            <div>
-              <Label htmlFor="password" value="Your password" />
+            <div className="flex-1">
               <div className="relative">
+                <Label htmlFor="password" value="Your password" />
                 <TextInput
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="**********"
                   onChange={handleChange}
-                  className="pr-10"
                 />
-                <div className="absolute inset-y-0 right-3 flex items-center text-sm leading-5">
+                <div className="flex items-end absolute right-3 bottom-3">
                   <button
                     type="button"
                     onClick={togglePasswordVisibility}
