@@ -11,7 +11,7 @@ export default function ClaimForm() {
     name: "",
     date: new Date(),
   });
-  const [showAlert, setShowAlert] = useState(false); // State to handle alert visibility
+  const [showAlert, setShowAlert] = useState(false); 
   const navigate = useNavigate();
 
   const handleChange = (e) => {
