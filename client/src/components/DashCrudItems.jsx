@@ -351,7 +351,7 @@ export default function DashCrudItems() {
   };
 
   return (
-    <div className="container mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
+    <div className="container mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500 overflow-x-auto">
       {/* Toast Messages */}
       {successMessage && (
         <Toast className="fixed top-4 right-4 z-50">

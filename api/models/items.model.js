@@ -78,6 +78,10 @@ const itemSchema = new mongoose.Schema(
       // When was the item claimed
       type: Date,
     },
+    department: {
+      type: String, // Add this new field for department
+      required: true,
+    },
   },
   { timestamps: true }
 );
