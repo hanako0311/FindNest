@@ -16,6 +16,7 @@ import {
   Toast,
   Select,
   TextInput,
+  Alert,
 } from "flowbite-react";
 import { Link } from "react-router-dom";
 import {
@@ -299,6 +300,23 @@ export default function DashCrudItems() {
     setShowAddModal(true);
   };
 
+  const resetModalState = () => {
+    setItemToEdit({
+      item: "",
+      dateFound: "",
+      location: "",
+      description: "",
+      imageUrls: [],
+      category: "Other",
+      status: "available",
+      claimantName: "",
+      claimedDate: "",
+    });
+    setFiles([]);
+    setImageUploadProgress(null);
+    setImageUploadError(false);
+  };
+
   return (
     <div className="container mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500">
       {/* Toast Messages */}
@@ -470,359 +488,192 @@ export default function DashCrudItems() {
 
       {/* Add Item Modal */}
       <Modal
-        show={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        size="2xl"
-      >
-        <Modal.Header>Add new item</Modal.Header>
-        <Modal.Body>
-          <form onSubmit={handleSaveItem}>
-            <div className="grid grid-cols-6 gap-6">
-              <div className="col-span-6 sm:col-span-3">
-                <label
-                  htmlFor="item"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Item Name
-                </label>
-                <input
-                  type="text"
-                  name="item"
-                  value={itemToEdit.item}
-                  onChange={(e) =>
-                    setItemToEdit({ ...itemToEdit, item: e.target.value })
-                  }
-                  id="item"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Item Name"
-                  required
-                />
-              </div>
-              <div className="col-span-6 sm:col-span-3">
-                <label
-                  htmlFor="dateFound"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Date Found
-                </label>
-                <input
-                  type="date"
-                  name="dateFound"
-                  value={itemToEdit.dateFound}
-                  onChange={(e) =>
-                    setItemToEdit({ ...itemToEdit, dateFound: e.target.value })
-                  }
-                  id="dateFound"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  required
-                />
-              </div>
-              <div className="col-span-6 sm:col-span-3">
-                <label
-                  htmlFor="location"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={itemToEdit.location}
-                  onChange={(e) =>
-                    setItemToEdit({ ...itemToEdit, location: e.target.value })
-                  }
-                  id="location"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Location"
-                  required
-                />
-              </div>
-              <div className="col-span-6 sm:col-span-3">
-                <label
-                  htmlFor="description"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Description
-                </label>
-                <input
-                  type="text"
-                  name="description"
-                  value={itemToEdit.description}
-                  onChange={(e) =>
-                    setItemToEdit({
-                      ...itemToEdit,
-                      description: e.target.value,
-                    })
-                  }
-                  id="description"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Description"
-                  required
-                />
-              </div>
-              <div className="col-span-6 sm:col-span-3">
-                <label
-                  htmlFor="category"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Category
-                </label>
-                <select
-                  name="category"
-                  value={itemToEdit.category}
-                  onChange={(e) =>
-                    setItemToEdit({ ...itemToEdit, category: e.target.value })
-                  }
-                  id="category"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                >
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-span-6">
-                <label
-                  htmlFor="imageUrls"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Image URLs
-                </label>
-                <FileInput
-                  type="file"
-                  id="images"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => setFiles(Array.from(e.target.files))}
-                  disabled={itemToEdit.imageUrls.length >= 5} // Disable the file input if the limit is reached
-                />
-                <Button
-                  type="button"
-                  gradientDuoTone="pinkToOrange"
-                  onClick={handleImageSubmit}
-                  disabled={imageUploadProgress !== null}
-                >
-                  {imageUploadProgress
-                    ? `Uploading ${imageUploadProgress}%`
-                    : "Upload Images"}
-                </Button>
-                {imageUploadError && (
-                  <Alert color="failure">{imageUploadError}</Alert>
-                )}
-                {itemToEdit.imageUrls.length > 0 && (
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    {itemToEdit.imageUrls.map((url, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={url}
-                          alt={`Item ${index + 1}`}
-                          className="w-24 h-24 object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute top-0 right-0 p-1 bg-red-500 rounded-full text-white"
-                        >
-                          <HiTrash className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+  show={showEditModal}
+  onClose={() => {
+    setShowEditModal(false);
+    resetModalState();
+  }}
+  size="2xl"
+>
+  <Modal.Header>Edit item</Modal.Header>
+  <Modal.Body>
+    <form onSubmit={handleSaveItem}>
+      <div className="grid grid-cols-6 gap-6">
+        <div className="col-span-6 sm:col-span-3">
+          <label
+            htmlFor="item"
+            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          >
+            Item Name
+          </label>
+          <input
+            type="text"
+            name="item"
+            value={itemToEdit.item}
+            onChange={(e) =>
+              setItemToEdit({ ...itemToEdit, item: e.target.value })
+            }
+            id="item"
+            className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+            placeholder="Item Name"
+            required
+          />
+        </div>
+        <div className="col-span-6 sm:col-span-3">
+          <label
+            htmlFor="dateFound"
+            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          >
+            Date Found
+          </label>
+          <input
+            type="date"
+            name="dateFound"
+            value={itemToEdit.dateFound}
+            onChange={(e) =>
+              setItemToEdit({ ...itemToEdit, dateFound: e.target.value })
+            }
+            id="dateFound"
+            className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+            required
+          />
+        </div>
+        <div className="col-span-6 sm:col-span-3">
+          <label
+            htmlFor="location"
+            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          >
+            Location
+          </label>
+          <input
+            type="text"
+            name="location"
+            value={itemToEdit.location}
+            onChange={(e) =>
+              setItemToEdit({ ...itemToEdit, location: e.target.value })
+            }
+            id="location"
+            className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+            placeholder="Location"
+            required
+          />
+        </div>
+        <div className="col-span-6 sm:col-span-3">
+          <label
+            htmlFor="description"
+            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          >
+            Description
+          </label>
+          <input
+            type="text"
+            name="description"
+            value={itemToEdit.description}
+            onChange={(e) =>
+              setItemToEdit({
+                ...itemToEdit,
+                description: e.target.value,
+              })
+            }
+            id="description"
+            className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+            placeholder="Description"
+            required
+          />
+        </div>
+        <div className="col-span-6 sm:col-span-3">
+          <label
+            htmlFor="category"
+            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          >
+            Category
+          </label>
+          <select
+            name="category"
+            value={itemToEdit.category}
+            onChange={(e) =>
+              setItemToEdit({ ...itemToEdit, category: e.target.value })
+            }
+            id="category"
+            className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+          >
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="col-span-6">
+          <label
+            htmlFor="imageUrls"
+            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+          >
+            Image URLs
+          </label>
+          <FileInput
+            type="file"
+            id="images"
+            accept="image/*"
+            multiple
+            onChange={(e) => setFiles(Array.from(e.target.files))}
+            disabled={itemToEdit.imageUrls.length >= 5}
+          />
+          <Button
+            type="button"
+            gradientDuoTone="pinkToOrange"
+            onClick={handleImageSubmit}
+            disabled={imageUploadProgress !== null || files.length === 0} // Disable button if no files selected
+            className="mt-2"
+          >
+            {imageUploadProgress
+              ? `Uploading ${imageUploadProgress}%`
+              : "Upload Images"}
+          </Button>
+          {imageUploadError && (
+            <Alert color="failure" className="mt-2">
+              {imageUploadError}
+            </Alert>
+          )}
+          {itemToEdit.imageUrls.length >= 5 && (
+            <Alert color="warning" className="mt-2">
+              Number of images is already at the maximum.
+            </Alert>
+          )}
+          {itemToEdit.imageUrls.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {itemToEdit.imageUrls.map((url, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={url}
+                    alt={`Item ${index + 1}`}
+                    className="w-full h-32 object-cover rounded-lg shadow-md"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(index)}
+                    className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white"
+                  >
+                    <HiTrash className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
             </div>
-            <div className="items-center p-6 border-t border-gray-200 rounded-b dark:border-gray-700">
-              <Button
-                type="submit"
-                gradientDuoTone="pinkToOrange"
-                className="w-full"
-              >
-                Save all
-              </Button>
-            </div>
-          </form>
-        </Modal.Body>
-      </Modal>
-
-      {/* Edit Item Modal */}
-      <Modal
-        show={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        size="2xl"
-      >
-        <Modal.Header>Edit item</Modal.Header>
-        <Modal.Body>
-          <form onSubmit={handleSaveItem}>
-            <div className="grid grid-cols-6 gap-6">
-              <div className="col-span-6 sm:col-span-3">
-                <label
-                  htmlFor="item"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Item Name
-                </label>
-                <input
-                  type="text"
-                  name="item"
-                  value={itemToEdit.item}
-                  onChange={(e) =>
-                    setItemToEdit({ ...itemToEdit, item: e.target.value })
-                  }
-                  id="item"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Item Name"
-                  required
-                />
-              </div>
-              <div className="col-span-6 sm:col-span-3">
-                <label
-                  htmlFor="dateFound"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Date Found
-                </label>
-                <input
-                  type="date"
-                  name="dateFound"
-                  value={itemToEdit.dateFound}
-                  onChange={(e) =>
-                    setItemToEdit({ ...itemToEdit, dateFound: e.target.value })
-                  }
-                  id="dateFound"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  required
-                />
-              </div>
-              <div className="col-span-6 sm:col-span-3">
-                <label
-                  htmlFor="location"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={itemToEdit.location}
-                  onChange={(e) =>
-                    setItemToEdit({ ...itemToEdit, location: e.target.value })
-                  }
-                  id="location"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Location"
-                  required
-                />
-              </div>
-              <div className="col-span-6 sm:col-span-3">
-                <label
-                  htmlFor="description"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Description
-                </label>
-                <input
-                  type="text"
-                  name="description"
-                  value={itemToEdit.description}
-                  onChange={(e) =>
-                    setItemToEdit({
-                      ...itemToEdit,
-                      description: e.target.value,
-                    })
-                  }
-                  id="description"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  placeholder="Description"
-                  required
-                />
-              </div>
-              <div className="col-span-6 sm:col-span-3">
-                <label
-                  htmlFor="category"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Category
-                </label>
-                <select
-                  name="category"
-                  value={itemToEdit.category}
-                  onChange={(e) =>
-                    setItemToEdit({ ...itemToEdit, category: e.target.value })
-                  }
-                  id="category"
-                  className="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                >
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-span-6">
-                <label
-                  htmlFor="imageUrls"
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Image URLs
-                </label>
-                <FileInput
-                  type="file"
-                  id="images"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => setFiles(Array.from(e.target.files))}
-                  disabled={itemToEdit.imageUrls.length >= 5} // Disable the file input if the limit is reached
-                />
-                <Button
-                  type="button"
-                  gradientDuoTone="pinkToOrange"
-                  onClick={handleImageSubmit}
-                  disabled={imageUploadProgress !== null}
-                >
-                  {imageUploadProgress
-                    ? `Uploading ${imageUploadProgress}%`
-                    : "Upload Images"}
-                </Button>
-                {imageUploadError && (
-                  <Alert color="failure">{imageUploadError}</Alert>
-                )}
-                {itemToEdit.imageUrls.length > 0 && (
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    {itemToEdit.imageUrls.map((url, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={url}
-                          alt={`Item ${index + 1}`}
-                          className="w-24 h-24 object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute top-0 right-0 p-1 bg-red-500 rounded-full text-white"
-                        >
-                          <HiTrash className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="items-center p-6 border-t border-gray-200 rounded-b dark:border-gray-700">
-              <Button
-                type="submit"
-                gradientDuoTone="pinkToOrange"
-                className="w-full"
-              >
-                Save all
-              </Button>
-            </div>
-          </form>
-        </Modal.Body>
-      </Modal>
+          )}
+        </div>
+      </div>
+      <div className="mt-6 flex justify-end">
+        <Button
+          type="submit"
+          gradientDuoTone="pinkToOrange"
+          className="w-full sm:w-auto"
+        >
+          Save all
+        </Button>
+      </div>
+    </form>
+  </Modal.Body>
+</Modal>
     </div>
   );
 }
