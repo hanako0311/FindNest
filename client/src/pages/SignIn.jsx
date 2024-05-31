@@ -2,6 +2,7 @@ import { Alert, Button, Label, Spinner, TextInput } from "flowbite-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import {
   signInStart,
   signInSuccess,
@@ -10,6 +11,7 @@ import {
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
   const { loading, error: errorMessage } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -44,6 +46,10 @@ export default function SignIn() {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className="min-h-screen mt-20">
       <div className="flex p-3 max-w-3xl mx-auto flex-col md:flex-row md:items-center gap-5">
@@ -70,12 +76,24 @@ export default function SignIn() {
             </div>
             <div>
               <Label htmlFor="password" value="Your password" />
-              <TextInput
-                type="password"
-                placeholder="**********"
-                id="password"
-                onChange={handleChange}
-              />
+              <div className="relative">
+                <TextInput
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="**********"
+                  onChange={handleChange}
+                  className="pr-10"
+                />
+                <div className="absolute inset-y-0 right-3 flex items-center text-sm leading-5">
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="text-gray-500"
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
+              </div>
             </div>
             <Button
               gradientDuoTone="purpleToPink"
