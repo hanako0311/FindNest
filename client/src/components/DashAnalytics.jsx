@@ -8,6 +8,7 @@ import {
   HiDocumentText,
   HiOutlineUserGroup,
   HiClipboardList,
+  HiDownload,
 } from "react-icons/hi";
 import Papa from "papaparse";
 import fileDownload from "js-file-download";
@@ -200,27 +201,31 @@ export default function DashAnalytics() {
           Dashboard Analytics
         </h1>
         <div className="flex flex-wrap gap-4 py-3 mx-auto justify-center">
-          <div className="flex flex-col p-6 bg-green-500 gap-4 md:w-72 w-full rounded-lg shadow-lg text-white">
-            <div className="flex justify-between">
-              <div>
-                <h3 className="text-white text-md uppercase">Total Users</h3>
-                <p className="text-3xl font-semibold">{totalUsers}</p>
+          {currentUser.role !== "staff" && (
+            <div className="flex flex-col p-6 bg-green-500 gap-4 md:w-72 w-full rounded-lg shadow-lg text-white">
+              <div className="flex justify-between ">
+                <div>
+                  <h3 className="text-white text-md uppercase">Total Users</h3>
+                  <p className="text-3xl font-semibold">{totalUsers}</p>
+                </div>
+                <HiOutlineUserGroup className="text-white text-5xl p-2" />
               </div>
-              <HiOutlineUserGroup className="text-white text-5xl p-2" />
             </div>
-            <div className="flex justify-between">
-              <span className="text-green-200 flex items-center">
-                <HiArrowNarrowUp />
-                {lastMonthUsers}
-              </span>
-              <div className="text-gray-200">Last month</div>
-            </div>
-          </div>
+          )}
           <div className="flex flex-col p-6 bg-yellow-500 gap-4 md:w-72 w-full rounded-lg shadow-lg text-white">
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-white text-md uppercase">Total Items</h3>
                 <p className="text-3xl font-semibold">{totalItemsReported}</p>
+              </div>
+              <HiDocumentText className="text-white text-5xl p-2" />
+            </div>
+          </div>
+          <div className="flex flex-col p-6 bg-orange-500 gap-4 md:w-72 w-full rounded-lg shadow-lg text-white">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-white text-md uppercase">Items Claimed</h3>
+                <p className="text-3xl font-semibold">{itemsClaimed}</p>
               </div>
               <HiDocumentText className="text-white text-5xl p-2" />
             </div>
@@ -356,8 +361,9 @@ export default function DashAnalytics() {
               currentUser.role === "admin" && (
                 <button
                   onClick={generateReport}
-                  className="bg-red-900 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                  className="bg-red-900 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center"
                 >
+                  <HiDownload className="mr-2" />
                   Download Report
                 </button>
               )}

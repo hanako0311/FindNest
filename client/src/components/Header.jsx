@@ -1,17 +1,10 @@
-import {
-  Avatar,
-  Button,
-  Dropdown,
-  Navbar,
-  TextInput,
-  Modal,
-} from "flowbite-react";
+import { Avatar, Button, Dropdown, Navbar, Modal } from "flowbite-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FaMoon, FaSun } from "react-icons/fa";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleTheme } from "../redux/theme/themeSlice";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { signoutSuccess } from "../redux/user/userSlice";
 
 export default function Header() {
@@ -59,9 +52,9 @@ export default function Header() {
         </span>
       </Link>
 
-      <div className="flex gap-2 md:order-2">
+      <div className="flex gap-2 md:order-2 items-center">
         <Button
-          className="w-12 h-10 hidden sm:inline"
+          className="w-12 h-10"
           color="gray"
           pill
           onClick={() => dispatch(toggleTheme())}
