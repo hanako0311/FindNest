@@ -14,7 +14,9 @@
     "@reduxjs/toolkit": "^2.2.3",
     "apexcharts": "^3.49.1",
     "chart.js": "^4.4.2",
+    "client": "file:",
     "date-fns": "^3.6.0",
+    "findnestapp": "file:..",
     "firebase": "^10.11.0",
     "flowbite": "^2.3.0",
     "flowbite-react": "^0.8.0",
@@ -46,6 +48,6 @@
     "eslint-plugin-react-refresh": "^0.4.6",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
-    "vite": "^5.2.0"
+    "vite": "^5.4.8"
   }
 }

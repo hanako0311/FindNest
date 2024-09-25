@@ -189,7 +189,7 @@ export const getUsers = async (req, res, next) => {
   try {
     const { excludeUserId } = req.query; // Get the excludeUserId parameter
     const startIndex = parseInt(req.query.startIndex) || 0;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || 9;
     const sortDirection = req.query.sort === "asc" ? 1 : -1;
 
     let query = excludeUserId ? { _id: { $ne: excludeUserId } } : {};

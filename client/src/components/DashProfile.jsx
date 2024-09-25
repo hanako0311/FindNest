@@ -35,7 +35,6 @@ export default function DashProfile() {
     lastname: currentUser.lastname,
     username: currentUser.username,
     email: currentUser.email,
-    department: currentUser.department,
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -121,9 +120,6 @@ export default function DashProfile() {
     }
     if (imageFileUploading) {
       setUpdateUserError("Please wait for image to upload");
-      return;
-    }
-    if (imageFileUploading) {
       return;
     }
     try {
@@ -285,7 +281,8 @@ export default function DashProfile() {
             onChange={handleChange}
           />
         </div>
-        <div className="flex flex-col gap-2">
+        {/* Hide and disable the department field */}
+        <div className="flex flex-col gap-2" style={{ display: "none" }}>
           <label htmlFor="department" className="font-medium">
             Department
           </label>
@@ -295,6 +292,7 @@ export default function DashProfile() {
             placeholder="Department"
             value={formData.department}
             onChange={handleChange}
+            disabled
           />
         </div>
         <div className="flex flex-col gap-2">
