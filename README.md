@@ -27,20 +27,40 @@ FindNest is an innovative digital solution designed to streamline and enhance th
 
 ## Getting Started
 
+Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
+
 ### Prerequisites
-- Node.js
-- MongoDB
+
+Before you begin, ensure you have the following software installed on your system:
+
+- [Node.js](https://nodejs.org/) (version 14.x or later)
+- [MongoDB](https://www.mongodb.com/) (running locally or on a cloud service like [MongoDB Atlas](https://www.mongodb.com/cloud/atlas))
 
 ### Installation
-git clone https://github.com/yourrepository/findnest.git
-cd findnest
-npm install
+
+To set up the project on your local machine, follow these steps:
+
+1. **Clone the repository**:
+   - git clone [https://github.com/yourrepository/findnest.git](https://github.com/hanako0311/FindNest.git)
+
+2. **Navigate into the project directory and install the dependencies (Frontend & Backend):**
+   - in root folder
+   - npm install
+   - **Frontend:**
+   - cd client
+   - npm install
+   
+3. **Navigate to the project directory:**:
+   - cd findnest   
 
 ### Running the Application
+
+To run the application locally, you need to start both the backend server and the frontend development server.
+
 # Start the backend server
-should be in root folder
-npm run dev
+  - should be in root folder
+  - npm run dev
 
 # Start the React frontend with Vite
-cd client
-npm run dev
+  - cd client
+  - npm run dev
